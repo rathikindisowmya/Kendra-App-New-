@@ -3697,12 +3697,26 @@ function __toDbRow(entity, localRow){
     );
     if(nameKey) row.name = String(source[nameKey]||'').trim() || undefined;
   }
+  // ── Persist ALL extra import fields into kendra_meta ────────────────────────
+  // Any source key that isn't a known DB column (e.g. AGE, EMAIL, PHONE, SURNAME
+  // from an Excel import) is stored in kendra_meta so it survives the
+  // sync → hydrate cycle and still shows in the UI after a refresh/login.
+  const knownDbCols = new Set([...cfg.columns, 'business_id', 'created_at', 'updated_at', 'kendra_meta']);
+  const skipKeys = new Set(['id','__rowNum__','__EMPTY','__EMPTY_1','__EMPTY_2']);
+  Object.keys(source).forEach(k => {
+    if(knownDbCols.has(k) || skipKeys.has(k)) return;
+    if(extra[k] !== undefined) return; // already set by entity-specific logic above
+    const v = source[k];
+    if(v === undefined || v === null || v === '') return;
+    extra[k] = v;
+  });
   // ────────────────────────────────────────────────────────────────────────────
 
-  if(__isUuid(source.id)) row.id=source.id;
   if(Object.keys(extra).length) row.kendra_meta=extra;
+  if(__isUuid(source.id)) row.id=source.id;
   return row;
 }
+
 
 function __fromDbRow(entity, dbRow){
   const row=__plainClone(dbRow||{});
@@ -3860,9 +3874,30 @@ async function __hydrateEntity(entity){
   const {data,error}=await sb.from(cfg.table).select('*').eq('business_id',currentBusiness.id).order('created_at',{ascending:false});
   if(error) throw error;
   const rows=(data||[]).map(r=>__fromDbRow(entity,r));
+
+  // If Supabase returned 0 rows (likely because sync previously failed and
+  // nothing was written to the DB), preserve the existing localStorage cache
+  // rather than wiping the in-memory array. This prevents imported data from
+  // disappearing on the next login/refresh.
+  if(rows.length === 0){
+    try{
+      const localRaw = __nativeLocalStorage.getItem(cfg.key);
+      if(localRaw){
+        const localRows = JSON.parse(localRaw);
+        if(Array.isArray(localRows) && localRows.length > 0){
+          __setEntityArray(entity, localRows);
+          // Re-schedule a sync so local data gets pushed to Supabase now
+          __scheduleEntitySync(entity);
+          return;
+        }
+      }
+    }catch(e){}
+  }
+
   __setEntityArray(entity,rows);
   __nativeSet(cfg.key,JSON.stringify(rows));
 }
+
 async function __hydrateAllData(){
   if(__dataHydratedFromSupabase || !sb || !currentBusiness?.id) return;
 
@@ -8487,9 +8522,9 @@ function openExpenseModal(){ openModal('ocrModal'); }
 
 
 
-window.onload = function(){
-  initAuth();
-};
+// initAuth is already called on DOMContentLoaded above.
+// window.onload is NOT used to avoid double-initialization.
+
 </script>
 
 <div class="modal-overlay" id="copilotModal" onclick="if(event.target===this)closeCopilot()" style="display:none;z-index:9999;">
