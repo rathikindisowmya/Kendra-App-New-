@@ -2005,7 +2005,7 @@ html, body {
     </div>
     <div class="card stat-card">
       <div class="card-head"><div class="card-title">Low Stock Items</div></div>
-      <div class="stat-value" id="dashLowStockVal" style="color:var(--coral);">50</div>
+      <div class="stat-value" id="dashLowStockVal" style="color:var(--coral);">0</div>
       <div style="font-size:12px;color:var(--coral);margin-top:4px;">Below Reorder Threshold</div>
     </div>
   </div>
@@ -2058,7 +2058,7 @@ html, body {
           <span>&#128308;</span><span style="font-weight: 600; color: var(--teal);" id="attOverdueInv">&#9989; All invoices are paid</span>
         </div>
         <div style="font-size:13px;padding:10px 12px;background:#FFFBF0;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="showPage(&#39;inventory&#39;)">
-          <span>&#128992;</span><span style="font-weight:600;color:var(--amber);" id="attLowStock">50 Products Below Reorder Level</span>
+          <span>&#128992;</span><span style="font-weight:600;color:var(--teal);" id="attLowStock">&#9989; All stock levels are healthy</span>
         </div>
         <div style="font-size:13px;padding:10px 12px;background:#F4F8F7;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="showPage(&#39;tasks&#39;)">
           <span>&#128993;</span><span style="font-weight: 600; color: var(--teal);" id="attOverdueTask">&#9989; No critical tasks overdue</span>
@@ -2091,12 +2091,12 @@ html, body {
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="width:13px;height:13px;border-radius:3px;background:#1D9E74;display:inline-block;box-shadow:0 0 6px rgba(29,158,116,0.4);"></span>
           <span style="color:var(--ink);">Revenue:</span>
-          <span id="dashLegendRev" style="font-weight:700;color:#1D9E74;">&#8377;2,45,000</span>
+          <span id="dashLegendRev" style="font-weight:700;color:#1D9E74;">&#8377;0</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="width:13px;height:13px;border-radius:3px;background:#E24B4A;display:inline-block;box-shadow:0 0 6px rgba(226,75,74,0.4);"></span>
           <span style="color:var(--ink);">Expenses:</span>
-          <span id="dashLegendExp" style="font-weight:700;color:#E24B4A;">&#8377;60,000</span>
+          <span id="dashLegendExp" style="font-weight:700;color:#E24B4A;">&#8377;0</span>
         </div>
       </div>
     </div>
@@ -2106,7 +2106,7 @@ html, body {
       <div class="card-head">
         <span class="card-title">Recent Activity</span>
       </div>
-      <div id="recentActivityList" style="display:flex;flex-direction:column;gap:12px;font-size:12.5px;"><div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);"><div style="width:32px;height:32px;border-radius:8px;background:var(--teal-soft);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">&#129309;</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="New customer added: Customer">New customer added: Customer</div><div style="font-size:11.5px;color:var(--ink-faint);margin-top:2px;">CRM &bull; Today</div></div></div><div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);"><div style="width:32px;height:32px;border-radius:8px;background:var(--teal-soft);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">&#129309;</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="New customer added: Customer">New customer added: Customer</div><div style="font-size:11.5px;color:var(--ink-faint);margin-top:2px;">CRM &bull; Today</div></div></div><div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);"><div style="width:32px;height:32px;border-radius:8px;background:var(--teal-soft);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">&#128450;</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="Document uploaded: customer data">Document uploaded: customer data</div><div style="font-size:11.5px;color:var(--ink-faint);margin-top:2px;">Document Vault &bull; 2026-08-16</div></div></div></div>
+      <div id="recentActivityList" style="display:flex;flex-direction:column;gap:12px;font-size:12.5px;"></div>
     </div>
   </div>
 
@@ -2119,7 +2119,7 @@ html, body {
       <button class="btn btn-secondary" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 10px;border-radius:10px;" onclick="openModal(&#39;prodModal&#39;)">
         <span style="font-size:22px;">&#128230;</span>
         <span style="font-size:12.5px;font-weight:600;">Add Product</span>
-        <span id="qaInvBadge" style="font-size:11px;color:var(--ink-faint);">50 SKUs tracked</span>
+        <span id="qaInvBadge" style="font-size:11px;color:var(--ink-faint);">0 SKUs tracked</span>
       </button>
       <button class="btn btn-secondary" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 10px;border-radius:10px;" onclick="showPage(&#39;finance&#39;)">
         <span style="font-size:22px;">&#128196;</span>
@@ -2129,7 +2129,7 @@ html, body {
       <button class="btn btn-secondary" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 10px;border-radius:10px;" onclick="showPage(&#39;crm&#39;)">
         <span style="font-size:22px;">&#129309;</span>
         <span style="font-size:12.5px;font-weight:600;">Add Customer</span>
-        <span id="qaCustBadge" style="font-size:11px;color:var(--ink-faint);">50 customers</span>
+        <span id="qaCustBadge" style="font-size:11px;color:var(--ink-faint);">0 customers</span>
       </button>
       <button class="btn btn-secondary" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 10px;border-radius:10px;" onclick="showPage(&#39;tasks&#39;)">
         <span style="font-size:22px;">&#9989;</span>
@@ -5261,6 +5261,7 @@ function saveDynamicRow(){
 
   currentEditingEntity = null;
   currentEditingRowId = null;
+  updateAllDashboardsAndStats();
 }
 
 function syncEntityAliases(rec){
@@ -7263,32 +7264,50 @@ function renderDashChart(range){
   const canvas = document.getElementById('rptChart1');
   if(!canvas || typeof Chart === 'undefined') return;
 
-  const totalRev = invoices.reduce((s,i) => s + (Number(i.amount) || 0), 0);
-  const totalExp = expenses.reduce((s,e) => s + (Number(e.amount) || 0), 0);
+  const m = getAggregatedBusinessMetrics();
+  const rVal = m.totalRev;
+  const eVal = m.totalExp;
 
   let labels = [];
   let revData = [];
   let expData = [];
 
-  const rVal = totalRev > 0 ? totalRev : 245000;
-  const eVal = totalExp > 0 ? totalExp : 60000;
-
   if(range === '7D'){
     labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    revData = [Math.round(rVal*0.12), Math.round(rVal*0.15), Math.round(rVal*0.18), Math.round(rVal*0.14), Math.round(rVal*0.22), Math.round(rVal*0.10), Math.round(rVal*0.09)];
-    expData = [Math.round(eVal*0.10), Math.round(eVal*0.20), Math.round(eVal*0.12), Math.round(eVal*0.15), Math.round(eVal*0.18), Math.round(eVal*0.15), Math.round(eVal*0.10)];
+    if(rVal === 0 && eVal === 0){
+      revData = [0, 0, 0, 0, 0, 0, 0];
+      expData = [0, 0, 0, 0, 0, 0, 0];
+    } else {
+      revData = [Math.round(rVal*0.12), Math.round(rVal*0.15), Math.round(rVal*0.18), Math.round(rVal*0.14), Math.round(rVal*0.22), Math.round(rVal*0.10), Math.round(rVal*0.09)];
+      expData = [Math.round(eVal*0.10), Math.round(eVal*0.20), Math.round(eVal*0.12), Math.round(eVal*0.15), Math.round(eVal*0.18), Math.round(eVal*0.15), Math.round(eVal*0.10)];
+    }
   } else if(range === '30D'){
     labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-    revData = [Math.round(rVal*0.22), Math.round(rVal*0.28), Math.round(rVal*0.24), Math.round(rVal*0.26)];
-    expData = [Math.round(eVal*0.25), Math.round(eVal*0.20), Math.round(eVal*0.30), Math.round(eVal*0.25)];
+    if(rVal === 0 && eVal === 0){
+      revData = [0, 0, 0, 0];
+      expData = [0, 0, 0, 0];
+    } else {
+      revData = [Math.round(rVal*0.22), Math.round(rVal*0.28), Math.round(rVal*0.24), Math.round(rVal*0.26)];
+      expData = [Math.round(eVal*0.25), Math.round(eVal*0.20), Math.round(eVal*0.30), Math.round(eVal*0.25)];
+    }
   } else if(range === '3M'){
     labels = ['Month 1', 'Month 2', 'Month 3'];
-    revData = [Math.round(rVal*0.30), Math.round(rVal*0.33), Math.round(rVal*0.37)];
-    expData = [Math.round(eVal*0.32), Math.round(eVal*0.35), Math.round(eVal*0.33)];
+    if(rVal === 0 && eVal === 0){
+      revData = [0, 0, 0];
+      expData = [0, 0, 0];
+    } else {
+      revData = [Math.round(rVal*0.30), Math.round(rVal*0.33), Math.round(rVal*0.37)];
+      expData = [Math.round(eVal*0.32), Math.round(eVal*0.35), Math.round(eVal*0.33)];
+    }
   } else if(range === '1Y'){
     labels = ['Q1', 'Q2', 'Q3', 'Q4'];
-    revData = [Math.round(rVal*0.21), Math.round(rVal*0.26), Math.round(rVal*0.25), Math.round(rVal*0.28)];
-    expData = [Math.round(eVal*0.24), Math.round(eVal*0.23), Math.round(eVal*0.27), Math.round(eVal*0.26)];
+    if(rVal === 0 && eVal === 0){
+      revData = [0, 0, 0, 0];
+      expData = [0, 0, 0, 0];
+    } else {
+      revData = [Math.round(rVal*0.21), Math.round(rVal*0.26), Math.round(rVal*0.25), Math.round(rVal*0.28)];
+      expData = [Math.round(eVal*0.24), Math.round(eVal*0.23), Math.round(eVal*0.27), Math.round(eVal*0.26)];
+    }
   }
 
   // Update Legend Values at Bottom
@@ -7340,9 +7359,7 @@ function renderDashChart(range){
         intersect: false
       },
       plugins: {
-        legend: {
-          display: false
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor: '#1E2926',
           padding: 10,
@@ -7357,9 +7374,7 @@ function renderDashChart(range){
       scales: {
         y: {
           beginAtZero: true,
-          grid: {
-            color: 'rgba(0,0,0,0.05)'
-          },
+          grid: { color: 'rgba(0,0,0,0.05)' },
           ticks: {
             callback: function(val) {
               if(val >= 100000) return '&#8377;' + (val/100000).toFixed(1) + 'L';
@@ -7370,12 +7385,8 @@ function renderDashChart(range){
           }
         },
         x: {
-          grid: {
-            display: false
-          },
-          ticks: {
-            font: { size: 11 }
-          }
+          grid: { display: false },
+          ticks: { font: { size: 11 } }
         }
       }
     }
@@ -7396,89 +7407,194 @@ function filterDashChart(range, btn){
   showToast('Chart timeframe updated to ' + range);
 }
 
-function computeDashboard(){
-  // &#9472;&#9472;&#9472; Financial Aggregates &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalRev   = invoices.reduce((s,i) => s + (Number(i.amount) || 0), 0);
-  const totalExp   = expenses.reduce((s,e) => s + (Number(e.amount) || 0), 0);
-  const netProfit  = totalRev - totalExp;
-  const paidRev    = invoices.filter(i => (i.status||'').toLowerCase()==='paid').reduce((s,i)=>s+(Number(i.amount)||0),0);
-  const receivables= invoices.filter(i => (i.status||'').toLowerCase()!=='paid').reduce((s,i)=>s+(Number(i.amount)||0),0);
-  const overdueInv = invoices.filter(i => ['overdue','pending'].includes((i.status||'').toLowerCase()));
-  const overdueAmt = overdueInv.reduce((s,i)=>s+(Number(i.amount)||0),0);
+function getAggregatedBusinessMetrics(){
+  // 1. Invoices & Sales / Customer Revenue
+  const invRev = (invoices || []).reduce((s, i) => s + (Number(i.amount || i.total_amount || 0) || 0), 0);
+  const custRev = (customers || []).reduce((s, c) => s + (Number(c.total_amount || c['TOTAL AMOUNT'] || c['Total Amount'] || c.total_purchase_value || c.ltv || c.LTV || c['Lifetime Value'] || c.total_purchases || 0) || 0), 0);
+  const totalRev = invRev > 0 ? invRev : custRev;
 
-  // &#9472;&#9472;&#9472; Inventory Aggregates &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const lowStockItems = products.filter(p => Number(p.stock||0) <= Number(p.min_stock||10));
+  // 2. Expenses, Supplier Payables & Employee Payroll
+  const expAmt = (expenses || []).reduce((s, e) => s + (Number(e.amount || 0) || 0), 0);
+  const suppPayables = (suppliers || []).reduce((s, sup) => s + (Number(sup.total_purchase_value || sup['TOTAL PURCHASE VALUE'] || sup['Total Purchase Value'] || sup.payables || sup.total_amount || 0) || 0), 0);
+  const empPayroll = (employees || []).reduce((s, e) => s + (Number(e.salary || e.Salary || e['Monthly Salary'] || e['MONTHLY SALARY'] || 0) || 0), 0);
+  const totalExp = expAmt > 0 ? expAmt : (suppPayables + empPayroll);
+
+  const netProfit = totalRev - totalExp;
+  const profitMargin = totalRev > 0 ? Math.round((netProfit / totalRev) * 100) : (totalExp > 0 ? -100 : 0);
+
+  // 3. Receivables & Overdue
+  const invReceivables = (invoices || []).filter(i => (i.status||'').toLowerCase() !== 'paid').reduce((s, i) => s + (Number(i.amount || 0) || 0), 0);
+  const custReceivables = (customers || []).reduce((s, c) => s + (Number(c.outstanding_balance || c['OUTSTANDING BALANCE'] || c['Outstanding Balance'] || c.outstanding || c.balance || c.due_amount || 0) || 0), 0);
+  const receivables = invReceivables > 0 ? invReceivables : custReceivables;
+
+  const overdueInv = (invoices || []).filter(i => ['overdue', 'pending'].includes((i.status || '').toLowerCase()));
+  const overdueAmt = overdueInv.reduce((s, i) => s + (Number(i.amount || 0) || 0), 0);
+
+  // 4. Inventory & Stock
+  const totalProds = (products || []).length;
+  const lowStockItems = (products || []).filter(p => {
+    const st = Number(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
+    const min = Number(p.min_stock !== undefined ? p.min_stock : (p['MIN_STOCK'] ?? p['Min Stock'] ?? p['Reorder Level'] ?? 10));
+    return st <= min;
+  });
   const lowStockCount = lowStockItems.length;
-  const invValuation  = products.reduce((s,p)=>s+((Number(p.price)||0)*(Number(p.stock)||0)),0);
+  const invValuation = (products || []).reduce((s, p) => {
+    const explicitVal = Number(p.stock_value || p['STOCK VALUE'] || p['Stock Value'] || 0);
+    if(explicitVal > 0) return s + explicitVal;
+    const price = Number(p.price !== undefined ? p.price : (p.selling_price || p.unit_price || p.cost || 0));
+    const stock = Number(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
+    return s + (price * stock);
+  }, 0);
+  const totalUnits = (products || []).reduce((s, p) => s + Number(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0)), 0);
 
-  // &#9472;&#9472;&#9472; CRM Aggregates &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalCust = customers.length;
-  const totalLtv  = customers.reduce((s,c)=>s+(Number(c.ltv||c.LTV||c['Lifetime Value']||0)),0);
-  const avgLtv    = totalCust > 0 ? Math.round(totalLtv / totalCust) : 0;
+  // 5. CRM & Customers
+  const totalCust = (customers || []).length;
+  const totalLtv = custRev;
+  const avgLtv = totalCust > 0 ? Math.round(totalLtv / totalCust) : 0;
+  const activeClients = (customers || []).filter(c => (c.status || c.STATUS || 'Active').toLowerCase() === 'active').length;
+  const retentionRate = totalCust > 0 ? Math.round((activeClients / totalCust) * 100) : (totalCust === 0 ? 100 : 0);
 
-  // &#9472;&#9472;&#9472; Workforce Aggregates &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalEmp   = employees.length;
-  const activeEmp  = employees.filter(e=>(e.status||'Active').toLowerCase()==='active').length;
-  const empAttRate = totalEmp > 0 ? Math.round((activeEmp/totalEmp)*100) : 0;
-  const totalPayroll = employees.reduce((s,e)=>s+(Number(e.salary||e.Salary||e['Monthly Salary']||e['MONTHLY SALARY']||0)),0);
+  // 6. Workforce & HR
+  const totalEmp = (employees || []).length;
+  const activeEmp = (employees || []).filter(e => (e.status || 'Active').toLowerCase() === 'active').length;
+  const avgAtt = employees.length ? Math.round(employees.reduce((s, e) => s + Number(e.attendance_pct || e.Attendance || e['ATTENDANCE'] || 95), 0) / employees.length) : (totalEmp > 0 ? 95 : 0);
+  const empAttRate = avgAtt;
+  const totalPayrollVal = empPayroll;
+  const deptSet = new Set((employees || []).map(e => e.department || e.Department || e['DEPARTMENT'] || 'General'));
 
-  // &#9472;&#9472;&#9472; Supplier Aggregates &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalSupp = suppliers.length;
-  const highRatedSupp = suppliers.filter(s => {
-    const r = parseFloat(String(s.rating||s.Rating||0));
-    return r >= 4;
-  }).length;
+  // 7. Suppliers & Procurement
+  const totalSupp = (suppliers || []).length;
+  const highRatedSupp = (suppliers || []).filter(s => parseFloat(String(s.rating || s.Rating || 0)) >= 4).length;
+  const totalOrders = (suppliers || []).reduce((acc, s) => acc + (Number(s.total_orders || s['TOTAL ORDERS'] || s['Total Orders'] || s.orders || 0) || 0), 0);
+  const fulfillRate = totalSupp > 0 ? Math.round((highRatedSupp / totalSupp) * 100) : 100;
 
-  // &#9472;&#9472;&#9472; Task Aggregates &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalTasks    = tasks.length;
-  const doneTasks     = tasks.filter(t=>(t.status||'').toLowerCase()==='done').length;
-  const pendingTasks  = tasks.filter(t=>(t.status||'').toLowerCase()!=='done').length;
-  const highPrioTasks = tasks.filter(t=>t.priority==='High'&&(t.status||'').toLowerCase()!=='done').length;
-  const taskCompRate  = totalTasks > 0 ? Math.round((doneTasks/totalTasks)*100) : 0;
+  // 8. Tasks & Operations
+  const totalTasks = (tasks || []).length;
+  const doneTasks = (tasks || []).filter(t => (t.status || '').toLowerCase() === 'done').length;
+  const pendingTasks = (tasks || []).filter(t => (t.status || '').toLowerCase() !== 'done').length;
+  const highPrioTasks = (tasks || []).filter(t => (t.priority || '').toLowerCase() === 'high' && (t.status || '').toLowerCase() !== 'done').length;
+  const taskCompRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 100;
 
-  // &#9472;&#9472;&#9472; Wire Header KPI Cards &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+  return {
+    totalRev, totalExp, netProfit, profitMargin,
+    receivables, overdueInv, overdueAmt,
+    totalProds, lowStockItems, lowStockCount, invValuation, totalUnits,
+    totalCust, totalLtv, avgLtv, activeClients, retentionRate,
+    totalEmp, activeEmp, empAttRate, totalPayroll: totalPayrollVal, deptSet,
+    totalSupp, highRatedSupp, totalOrders, suppPayables, fulfillRate,
+    totalTasks, doneTasks, pendingTasks, highPrioTasks, taskCompRate
+  };
+}
+
+function updateAllDashboardsAndStats(){
+  try { computeDashboard(); } catch(e){}
+  try { if(typeof computeHealthScore === 'function') computeHealthScore(); } catch(e){}
+  try { renderRecentActivity(); } catch(e){}
+
+  const currentActivePage = document.querySelector('.page.active');
+  const activeId = currentActivePage ? currentActivePage.id.replace(/^page-/, '') : 'dashboard';
+
+  try {
+    if(activeId === 'dashboard') {
+      renderDashChart();
+    } else if(activeId === 'finance') {
+      renderInvoices();
+      renderExpenses();
+      renderFinanceCharts();
+    } else if(activeId === 'reports') {
+      renderReports();
+    } else if(activeId === 'employees') {
+      renderEmp();
+    } else if(activeId === 'crm') {
+      renderCust();
+    } else if(activeId === 'inventory') {
+      renderInv();
+    } else if(activeId === 'suppliers') {
+      renderSuppliers();
+    } else if(activeId === 'goods') {
+      renderGoodsMovements();
+    } else if(activeId === 'tasks') {
+      renderTasks();
+    } else if(activeId === 'documents') {
+      renderDocs();
+    }
+  } catch(e){}
+}
+
+
+function computeDashboard(){
+  const m = getAggregatedBusinessMetrics();
   const el = id => document.getElementById(id);
-  if(el('dashRevVal'))       el('dashRevVal').textContent = INR(totalRev);
-  if(el('dashProfitVal'))    el('dashProfitVal').textContent = INR(netProfit);
-  if(el('dashRecVal'))       el('dashRecVal').textContent = INR(receivables);
-  if(el('dashLowStockVal'))  el('dashLowStockVal').textContent = lowStockCount;
+
+  // 1. Wire 4 Top Essential KPI Cards
+  if(el('dashRevVal'))      el('dashRevVal').textContent = INR(m.totalRev);
+  if(el('dashProfitVal'))   el('dashProfitVal').textContent = INR(m.netProfit);
+  if(el('dashRecVal'))      el('dashRecVal').textContent = INR(m.receivables);
+  if(el('dashLowStockVal')) el('dashLowStockVal').textContent = m.lowStockCount;
 
   // Colour profit card based on sign
   const profEl = el('dashProfitVal');
-  if(profEl) profEl.style.color = netProfit >= 0 ? 'var(--teal)' : 'var(--coral)';
+  if(profEl) profEl.style.color = m.netProfit >= 0 ? 'var(--teal)' : 'var(--coral)';
 
-  // &#9472;&#9472;&#9472; Needs Attention Alerts &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+  // 2. Health & Diagnostic Summary on Main Dashboard
+  let finScore = 100;
+  if(m.totalRev === 0) finScore = 70;
+  else if(m.profitMargin < 0) finScore = 55;
+  else if(m.profitMargin < 15) finScore = 75;
+
+  let salesScore = m.totalCust > 0 ? Math.min(100, Math.max(70, Math.round(m.retentionRate * 0.9 + 10))) : 80;
+  let invScore = m.totalProds > 0 ? (m.lowStockCount === 0 ? 100 : Math.max(50, Math.round(100 - (m.lowStockCount / m.totalProds) * 100))) : 85;
+  let opsScore = m.highPrioTasks === 0 ? 98 : Math.max(60, 100 - m.highPrioTasks * 10);
+
+  const overallHealth = Math.round((finScore * 0.3) + (salesScore * 0.25) + (invScore * 0.25) + (opsScore * 0.2));
+
+  if(el('dashHealthNum')) el('dashHealthNum').textContent = overallHealth;
+  if(el('dashHealthStatus')){
+    const statusText = overallHealth >= 85 ? 'Optimal' : overallHealth >= 70 ? 'Good' : 'Review';
+    el('dashHealthStatus').textContent = statusText;
+    el('dashHealthStatus').className = overallHealth >= 85 ? 'badge badge-green' : overallHealth >= 70 ? 'badge badge-amber' : 'badge badge-red';
+  }
+  if(el('dashBarFin'))   el('dashBarFin').style.width = finScore + '%';
+  if(el('dashBarSales')) el('dashBarSales').style.width = salesScore + '%';
+  if(el('dashBarInv'))   el('dashBarInv').style.width = invScore + '%';
+  if(el('dashBarOps'))   el('dashBarOps').style.width = opsScore + '%';
+
+  if(el('dashValFin'))   el('dashValFin').textContent = finScore + '/100';
+  if(el('dashValSales')) el('dashValSales').textContent = salesScore + '/100';
+  if(el('dashValInv'))   el('dashValInv').textContent = invScore + '/100';
+  if(el('dashValOps'))   el('dashValOps').textContent = opsScore + '/100';
+
+  // 3. Needs Attention Alerts
   if(el('attOverdueInv')){
-    const txt = overdueInv.length === 0
+    const txt = m.overdueInv.length === 0
       ? '&#9989; All invoices are paid'
-      : overdueInv.length + ' Overdue / Pending Invoice' + (overdueInv.length > 1 ? 's' : '') + ' (' + INR(overdueAmt) + ' outstanding)';
-    el('attOverdueInv').textContent = txt;
-    el('attOverdueInv').style.color = overdueInv.length > 0 ? 'var(--coral)' : 'var(--teal)';
+      : m.overdueInv.length + ' Overdue / Pending Invoice' + (m.overdueInv.length > 1 ? 's' : '') + ' (' + INR(m.overdueAmt) + ' outstanding)';
+    el('attOverdueInv').innerHTML = txt;
+    el('attOverdueInv').style.color = m.overdueInv.length > 0 ? 'var(--coral)' : 'var(--teal)';
   }
   if(el('attLowStock')){
-    const txt = lowStockCount === 0
+    const txt = m.lowStockCount === 0
       ? '&#9989; All stock levels are healthy'
-      : lowStockCount + ' Product' + (lowStockCount > 1 ? 's' : '') + ' Below Reorder Level';
-    el('attLowStock').textContent = txt;
-    el('attLowStock').style.color = lowStockCount > 0 ? 'var(--amber)' : 'var(--teal)';
+      : m.lowStockCount + ' Product' + (m.lowStockCount > 1 ? 's' : '') + ' Below Reorder Level';
+    el('attLowStock').innerHTML = txt;
+    el('attLowStock').style.color = m.lowStockCount > 0 ? 'var(--amber)' : 'var(--teal)';
   }
   if(el('attOverdueTask')){
-    const txt = highPrioTasks === 0
+    const txt = m.highPrioTasks === 0
       ? '&#9989; No critical tasks overdue'
-      : highPrioTasks + ' High-Priority Task' + (highPrioTasks > 1 ? 's' : '') + ' Pending Completion';
-    el('attOverdueTask').textContent = txt;
-    el('attOverdueTask').style.color = highPrioTasks > 0 ? 'var(--coral)' : 'var(--teal)';
+      : m.highPrioTasks + ' High-Priority Task' + (m.highPrioTasks > 1 ? 's' : '') + ' Pending Completion';
+    el('attOverdueTask').innerHTML = txt;
+    el('attOverdueTask').style.color = m.highPrioTasks > 0 ? 'var(--coral)' : 'var(--teal)';
   }
 
-  // &#9472;&#9472;&#9472; Quick Action Badges &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  if(el('qaInvBadge'))       el('qaInvBadge').textContent = products.length + ' SKUs tracked';
-  if(el('qaInvCountBadge'))  el('qaInvCountBadge').textContent = invoices.length + ' invoices';
-  if(el('qaCustBadge'))      el('qaCustBadge').textContent = totalCust + ' customers';
-  if(el('qaTaskBadge'))      el('qaTaskBadge').textContent = pendingTasks > 0 ? pendingTasks + ' pending' : '&#9989; All done';
-  if(el('qaMoveBadge'))      el('qaMoveBadge').textContent = goodsMovements.length + ' movements';
+  // 4. Quick Action Badges
+  if(el('qaInvBadge'))      el('qaInvBadge').textContent = m.totalProds + ' SKUs tracked';
+  if(el('qaInvCountBadge')) el('qaInvCountBadge').textContent = (invoices || []).length + ' invoices';
+  if(el('qaCustBadge'))     el('qaCustBadge').textContent = m.totalCust + ' customers';
+  if(el('qaTaskBadge'))     el('qaTaskBadge').textContent = m.pendingTasks > 0 ? m.pendingTasks + ' pending' : '&#9989; All done';
+  if(el('qaMoveBadge'))     el('qaMoveBadge').textContent = (goodsMovements || []).length + ' movements';
 
   renderDashChart(currentDashChartRange || '30D');
-  computeHealthScore();
   renderRecentActivity();
 }
 
@@ -7538,48 +7654,43 @@ function exportHealthReport(){
 
 function computeHealthScore(){
   const el = id => document.getElementById(id);
+  const m = getAggregatedBusinessMetrics();
 
-  // &#9472;&#9472;&#9472; Financial &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalRev   = invoices.reduce((s,i)=>s+(Number(i.amount)||0),0);
-  const totalExp   = expenses.reduce((s,e)=>s+(Number(e.amount)||0),0);
-  const netProfit  = totalRev - totalExp;
-  const profitMargin = totalRev > 0 ? Math.round((netProfit/totalRev)*100) : 0;
-  const overdueInv = invoices.filter(i=>['overdue','pending'].includes((i.status||'').toLowerCase()));
-  const overdueAmt = overdueInv.reduce((s,i)=>s+(Number(i.amount)||0),0);
+  const totalRev = m.totalRev;
+  const totalExp = m.totalExp;
+  const netProfit = m.netProfit;
+  const profitMargin = m.profitMargin;
+  const overdueInv = m.overdueInv;
+  const overdueAmt = m.overdueAmt;
 
-  // &#9472;&#9472;&#9472; CRM &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalCust = customers.length;
-  const totalLtv  = customers.reduce((s,c)=>s+(Number(c.ltv||c.LTV||c['Lifetime Value']||0)),0);
-  const avgLtv    = totalCust > 0 ? Math.round(totalLtv/totalCust) : 0;
-  const activeClients = customers.filter(c=>(c.status||'Active').toLowerCase()==='active').length;
-  const retentionRate = totalCust > 0 ? Math.round((activeClients/totalCust)*100) : 0;
+  const totalCust = m.totalCust;
+  const totalLtv = m.totalLtv;
+  const avgLtv = m.avgLtv;
+  const activeClients = m.activeClients;
+  const retentionRate = m.retentionRate;
 
-  // &#9472;&#9472;&#9472; Inventory &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalProds    = products.length;
-  const lowStockItems = products.filter(p=>Number(p.stock||0)<=Number(p.min_stock||10));
-  const lowStockCount = lowStockItems.length;
-  const invValuation  = products.reduce((s,p)=>s+((Number(p.price)||0)*(Number(p.stock)||0)),0);
-  const totalUnits    = products.reduce((s,p)=>s+Number(p.stock||0),0);
+  const totalProds = m.totalProds;
+  const lowStockItems = m.lowStockItems;
+  const lowStockCount = m.lowStockCount;
+  const invValuation = m.invValuation;
+  const totalUnits = m.totalUnits;
 
-  // &#9472;&#9472;&#9472; Workforce &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalEmp     = employees.length;
-  const activeEmp    = employees.filter(e=>(e.status||'Active').toLowerCase()==='active').length;
-  const empAttRate   = totalEmp > 0 ? Math.round((activeEmp/totalEmp)*100) : 0;
-  const totalPayroll = employees.reduce((s,e)=>s+(Number(e.salary||e.Salary||e['Monthly Salary']||e['MONTHLY SALARY']||0)),0);
-  const deptSet      = new Set(employees.map(e=>e.department||e.Department||e['DEPARTMENT']||'General'));
+  const totalEmp = m.totalEmp;
+  const activeEmp = m.activeEmp;
+  const empAttRate = m.empAttRate;
+  const totalPayroll = m.totalPayroll;
+  const deptSet = m.deptSet;
 
-  // &#9472;&#9472;&#9472; Tasks / Ops &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalTasks    = tasks.length;
-  const doneTasks     = tasks.filter(t=>(t.status||'').toLowerCase()==='done').length;
-  const highPrioTasks = tasks.filter(t=>t.priority==='High'&&(t.status||'').toLowerCase()!=='done').length;
-  const taskCompRate  = totalTasks > 0 ? Math.round((doneTasks/totalTasks)*100) : 100;
+  const totalTasks = m.totalTasks;
+  const doneTasks = m.doneTasks;
+  const highPrioTasks = m.highPrioTasks;
+  const taskCompRate = m.taskCompRate;
 
-  // &#9472;&#9472;&#9472; Suppliers &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  const totalSupp     = suppliers.length;
-  const highRatedSupp = suppliers.filter(s=>parseFloat(String(s.rating||s.Rating||0))>=4).length;
-  const fulfillRate   = totalSupp > 0 ? Math.round((highRatedSupp/totalSupp)*100) : 100;
+  const totalSupp = m.totalSupp;
+  const highRatedSupp = m.highRatedSupp;
+  const fulfillRate = m.fulfillRate;
 
-  // &#9472;&#9472;&#9472; Individual Health Scores (0&#8211;100) &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+  // ─── Individual Health Scores (0–100) ────────────────────
   let finScore = 100;
   if(totalRev === 0)            finScore -= 20;
   if(profitMargin < 0)          finScore -= 25;
@@ -8046,65 +8157,65 @@ function renderRecentActivity(){
 
   const events = [];
 
-  // Invoices &#8594; recent 3 by id (latest added = highest id or index)
-  const recentInvoices = [...invoices].slice(-5).reverse();
-  recentInvoices.forEach(inv => {
-    if(!inv) return;
-    const no     = inv.invoice_no || inv.id || 'Invoice';
-    const cust   = inv.customer_name || inv.customer || 'Client';
-    const amt    = inv.amount ? ' &mdash; ' + INR(Number(inv.amount)) : '';
-    const status = (inv.status || 'Issued').toLowerCase();
-    const icon   = status === 'paid' ? '&#9989;' : status === 'overdue' ? '&#128308;' : '&#128196;';
-    events.push({ icon, title: no + ' issued to ' + cust + amt, sub: 'Invoice &bull; ' + (inv.issue_date || 'Today'), ts: inv.id || 0 });
-  });
-
-  // Goods movements &#8594; recent 3
-  const recentGoods = [...goodsMovements].slice(-3).reverse();
-  recentGoods.forEach(g => {
-    if(!g) return;
-    const dir  = (g.type || 'in').toUpperCase();
-    const prod = g.product_name || g.product || 'Item';
-    const qty  = g.quantity ? ' &#215; ' + g.quantity + ' units' : '';
-    events.push({ icon: dir === 'IN' ? '&#128229;' : '&#128228;', title: 'Stock ' + dir + ': ' + prod + qty, sub: 'Goods Movement &bull; ' + (g.timestamp || 'Today'), ts: g.id || 0 });
-  });
-
-  // Customers &#8594; most recently added 2
-  const recentCusts = [...customers].slice(-2).reverse();
-  recentCusts.forEach(c => {
+  // 1. Customers -> most recent
+  [...(customers || [])].slice(-3).reverse().forEach(c => {
     if(!c) return;
-    const name = c.name || c.customer_name || 'Customer';
-    events.push({ icon: '&#129309;', title: 'New customer added: ' + name, sub: 'CRM &bull; ' + (c.added_date || 'Today'), ts: c.id || 0 });
+    const name = c.name || c['CUSTOMER NAME'] || c['Customer Name'] || 'Customer';
+    const ltvVal = Number(c.total_amount || c['TOTAL AMOUNT'] || c.ltv || c.LTV || 0);
+    const ltvStr = ltvVal > 0 ? ' (' + INR(ltvVal) + ')' : '';
+    events.push({
+      icon: '&#129309;',
+      title: 'Customer account: ' + name + ltvStr,
+      sub: 'CRM &bull; ' + (c.city || c.location || 'Active Account'),
+      ts: c.id || 0
+    });
   });
 
-  // Tasks &#8594; recently completed
-  const doneTasks = tasks.filter(t=>(t.status||'').toLowerCase()==='done').slice(-2).reverse();
-  doneTasks.forEach(t => {
-    if(!t) return;
-    events.push({ icon: '&#9989;', title: 'Task completed: ' + (t.title || 'Task'), sub: 'Operations &bull; ' + (t.due_date || 'Today'), ts: t.id || 0 });
+  // 2. Suppliers -> most recent
+  [...(suppliers || [])].slice(-3).reverse().forEach(s => {
+    if(!s) return;
+    const name = s.name || s['SUPPLIER NAME'] || s['Supplier Name'] || 'Supplier';
+    const orders = s.total_orders || s['TOTAL ORDERS'] || s.orders;
+    const orderStr = orders ? ' &mdash; ' + orders + ' Orders' : '';
+    events.push({
+      icon: '&#128666;',
+      title: 'Supplier partner: ' + name + orderStr,
+      sub: 'Procurement &bull; ' + (s.category || 'Vendor'),
+      ts: s.id || 0
+    });
   });
 
-  // Documents &#8594; recently uploaded
-  const recentDocs = [...documents].slice(-2).reverse();
-  recentDocs.forEach(d => {
-    if(!d) return;
-    events.push({ icon: '&#128450;', title: 'Document uploaded: ' + (d.name || 'File'), sub: 'Document Vault &bull; ' + (d.uploaded_at || 'Today'), ts: d.id || 0 });
+  // 3. Products -> most recent
+  [...(products || [])].slice(-3).reverse().forEach(p => {
+    if(!p) return;
+    const name = p.name || p['PRODUCT NAME'] || p.title || 'Product SKU';
+    const st = p.stock !== undefined ? p.stock : (p['STOCK'] ?? 0);
+    events.push({
+      icon: '&#128230;',
+      title: 'Inventory SKU: ' + name + ' (' + st + ' in stock)',
+      sub: 'Catalog &bull; ' + (p.category || 'Stock'),
+      ts: p.id || 0
+    });
   });
 
-  // Expenses &#8594; most recent
-  const recentExp = [...expenses].slice(-2).reverse();
-  recentExp.forEach(e => {
-    if(!e) return;
-    const amt = e.amount ? ' &mdash; ' + INR(Number(e.amount)) : '';
-    events.push({ icon: '&#128184;', title: (e.category || 'Expense') + ' logged: ' + (e.vendor || 'Vendor') + amt, sub: 'Finance &bull; ' + (e.date || 'Today'), ts: e.id || 0 });
+  // 4. Invoices & Expenses
+  [...(invoices || [])].slice(-2).reverse().forEach(i => {
+    if(!i) return;
+    events.push({
+      icon: '&#129534;',
+      title: 'Invoice #' + (i.invoice_no || 'INV') + ' &mdash; ' + INR(Number(i.amount || 0)),
+      sub: 'Billing &bull; ' + (i.status || 'Issued'),
+      ts: i.id || 0
+    });
   });
 
   if(!events.length){
-    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink-faint);font-size:13px;">No recent activity yet. Start adding data across modules to see live activity here.</div>';
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink-faint);font-size:13px;">No recent activity yet. Start adding or importing data across modules to see live activity here.</div>';
     return;
   }
 
-  list.innerHTML = events.slice(0, 8).map(a =>
-    '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);">' +
+  list.innerHTML = events.slice(0, 6).map(a =>
+    '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">' +
       '<div style="width:32px;height:32px;border-radius:8px;background:var(--teal-soft);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">' + a.icon + '</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="font-weight:600;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(a.title) + '">' + escapeHtml(a.title) + '</div>' +
