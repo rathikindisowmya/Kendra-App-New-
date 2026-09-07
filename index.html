@@ -3644,6 +3644,12 @@ function __toDbRow(entity, localRow){
   const row={ business_id: currentBusiness?.id };
   const extra={};
 
+  // ── Resolve column aliases BEFORE mapping to DB columns ─────────────────────
+  // This fixes records imported from Excel with headers like "EMPLOYEE NAME",
+  // "Monthly Salary", "Client Name" that were stored un-normalised in localStorage.
+  if(typeof syncEntityAliases === 'function') syncEntityAliases(source);
+  // ────────────────────────────────────────────────────────────────────────────
+
   // Aliases used by the current app, mapped to the existing Supabase schema.
   if(entity==='products'){
     if(source.price!==undefined && source.selling_price===undefined) source.selling_price=source.price;
@@ -3676,10 +3682,28 @@ function __toDbRow(entity, localRow){
     if(col==='id') return;
     if(Object.prototype.hasOwnProperty.call(source,col)) row[col]=source[col];
   });
+
+  // ── Last-resort name fallback ────────────────────────────────────────────────
+  // If 'name' is still missing after alias resolution, search ALL source keys
+  // for any that contain the word "name" or "title" and use the first hit.
+  // This handles completely custom column headers like "Full_Name", "Staff Name", etc.
+  if((row.name===undefined || row.name===null || row.name==='') && cfg.columns.includes('name')){
+    const nameKey = Object.keys(source).find(k =>
+      /^(full.?name|staff.?name|person.?name|worker.?name|contact.?name|display.?name|agent.?name|member.?name|participant.?name)$/i.test(k.trim())
+    ) || Object.keys(source).find(k =>
+      k !== 'business_id' && /name/i.test(k) && String(source[k]||'').trim()
+    ) || Object.keys(source).find(k =>
+      /title/i.test(k) && String(source[k]||'').trim()
+    );
+    if(nameKey) row.name = String(source[nameKey]||'').trim() || undefined;
+  }
+  // ────────────────────────────────────────────────────────────────────────────
+
   if(__isUuid(source.id)) row.id=source.id;
   if(Object.keys(extra).length) row.kendra_meta=extra;
   return row;
 }
+
 function __fromDbRow(entity, dbRow){
   const row=__plainClone(dbRow||{});
   const meta=(row && row.kendra_meta && typeof row.kendra_meta==='object') ? row.kendra_meta : {};
@@ -3737,25 +3761,40 @@ async function __syncEntityToSupabase(entity, localData){
         delete dbRow.id;
         result=await sb.from(cfg.table).insert(dbRow).select().single();
       }
-      if(result.error && /kendra_meta|schema cache|column.*does not exist|Could not find/i.test(result.error.message||'')){
-        // Drop kendra_meta (extra UI fields never in the DB schema)
-        delete dbRow.kendra_meta;
-        // Also drop the specific column Supabase can't find in the schema cache
-        // Error format: "Could not find the 'salary' column of 'employees' in the schema cache"
+      // ── Retry loop: strip unknown columns one at a time ──────────────────────
+      // Handles cases where the actual Supabase schema is missing multiple columns
+      // (e.g. purchase_price AND selling_price both absent). Each iteration strips
+      // one column named in the error message and retries. Max 10 strips to prevent
+      // infinite loops on genuine errors.
+      const schemaErrRe = /kendra_meta|schema cache|column.*does not exist|Could not find/i;
+      const strippedCols = new Set();
+      let retries = 0;
+      while(result.error && schemaErrRe.test(result.error.message||'') && retries < 10){
+        retries++;
+        // Always drop kendra_meta on the first schema-cache error
+        if(dbRow.kendra_meta !== undefined){ delete dbRow.kendra_meta; strippedCols.add('kendra_meta'); }
+        // Parse the specific bad column from the error message
         const colMatch = (result.error.message||'').match(/Could not find the '([^']+)' column/i)
-          || (result.error.message||'').match(/column "([^"]+)" of relation/i);
+          || (result.error.message||'').match(/column "([^"]+)" of relation/i)
+          || (result.error.message||'').match(/column "([^"]+)"/i);
         const badCol = colMatch?.[1];
-        if(badCol && badCol !== 'business_id' && badCol !== 'id' && dbRow[badCol] !== undefined){
-          console.warn('[Kendra] Dropping unrecognised column from DB row:', badCol);
+        if(badCol && badCol !== 'business_id' && badCol !== 'id' && !strippedCols.has(badCol) && dbRow[badCol] !== undefined){
+          console.warn('[Kendra] Dropping column not in schema:', badCol);
           delete dbRow[badCol];
+          strippedCols.add(badCol);
+        } else if(!badCol || strippedCols.has(badCol)){
+          // No new column to strip — can't recover further
+          break;
         }
         if(dbRow.id && __isUuid(dbRow.id)){
-          result=await sb.from(cfg.table).upsert(dbRow,{onConflict:'id'}).select().single();
-        }else{
+          result = await sb.from(cfg.table).upsert(dbRow,{onConflict:'id'}).select().single();
+        } else {
           delete dbRow.id;
-          result=await sb.from(cfg.table).insert(dbRow).select().single();
+          result = await sb.from(cfg.table).insert(dbRow).select().single();
         }
       }
+      // ─────────────────────────────────────────────────────────────────────────
+
       if(result.error) throw result.error;
       const saved=result.data;
       if(saved?.id && String(localRow.id)!==String(saved.id)) localRow.id=saved.id;
@@ -3800,12 +3839,22 @@ async function __hydrateEntity(entity){
 }
 async function __hydrateAllData(){
   if(__dataHydratedFromSupabase || !sb || !currentBusiness?.id) return;
-  await Promise.all(Object.keys(KENDRA_ENTITY_MAP).map(__hydrateEntity));
-  // Purchase orders are represented in the existing schema but the current UI only shows a count.
+
+  // Hydrate each entity individually — a single table error (e.g. missing column)
+  // must NOT abort hydration of the other entities.
+  const entities = Object.keys(KENDRA_ENTITY_MAP);
+  await Promise.all(entities.map(async entity => {
+    try{ await __hydrateEntity(entity); }
+    catch(err){ console.warn('[Kendra] Hydration failed for', entity, err.message); }
+  }));
+
+  // Purchase orders — count only
   try{
     const {count,error}=await sb.from('purchase_orders').select('id',{count:'exact',head:true}).eq('business_id',currentBusiness.id);
     if(!error){ __nativeSet('kendra_purchase_order_count',String(count||0)); }
   }catch(e){}
+
+  // Import history
   try{
     const {data,error}=await sb.from('import_history').select('*').eq('business_id',currentBusiness.id).order('created_at',{ascending:false});
     if(!error){
@@ -3817,8 +3866,12 @@ async function __hydrateAllData(){
       __nativeSet('kendra_import_history',JSON.stringify(mapped));
     }
   }catch(e){}
+
+  // Mark hydration complete regardless of individual entity failures.
+  // This prevents loadAll() from overwriting cloud data with stale localStorage.
   __dataHydratedFromSupabase=true;
 }
+
 
 async function __ensureWorkspace(user, pending){
   if(!sb || !user) return null;
@@ -8159,13 +8212,18 @@ function commitImport(){
   const normalizeImport = (records) =>
     records.map(r => { const c = {...r}; syncEntityAliases(c); return c; });
 
+  // Also normalise the existing in-memory array to clean up any old un-normalised
+  // records that were imported before this fix was deployed.
+  const normalizeAll = (records) =>
+    records.map(r => { const c = {...r}; syncEntityAliases(c); return c; });
+
   // Merge imported records into the in-memory array and persist + sync to Supabase
   if(type === 'customers') {
-    customers = [...normalizeImport(currentParsedImportRecords), ...customers];
+    customers = normalizeAll([...normalizeImport(currentParsedImportRecords), ...customers]);
     localStorage.setItem('kendra_customers_list', JSON.stringify(customers));
     if(sb && currentBusiness?.id) __scheduleEntitySync('customers');
   } else if(type === 'employees') {
-    employees = [...normalizeImport(currentParsedImportRecords), ...employees];
+    employees = normalizeAll([...normalizeImport(currentParsedImportRecords), ...employees]);
     localStorage.setItem('kendra_employees_list', JSON.stringify(employees));
     if(sb && currentBusiness?.id) __scheduleEntitySync('employees');
   } else if(type === 'products') {
@@ -8174,18 +8232,19 @@ function commitImport(){
     localStorage.setItem('kendra_products_list', JSON.stringify(products));
     if(sb && currentBusiness?.id) __scheduleEntitySync('products');
   } else if(type === 'suppliers') {
-    suppliers = [...normalizeImport(currentParsedImportRecords), ...suppliers];
+    suppliers = normalizeAll([...normalizeImport(currentParsedImportRecords), ...suppliers]);
     localStorage.setItem('kendra_suppliers_list', JSON.stringify(suppliers));
     if(sb && currentBusiness?.id) __scheduleEntitySync('suppliers');
   } else if(type === 'expenses') {
-    expenses = [...normalizeImport(currentParsedImportRecords), ...expenses];
+    expenses = normalizeAll([...normalizeImport(currentParsedImportRecords), ...expenses]);
     localStorage.setItem('kendra_expenses_list', JSON.stringify(expenses));
     if(sb && currentBusiness?.id) __scheduleEntitySync('expenses');
   } else if(type === 'invoices') {
-    invoices = [...normalizeImport(currentParsedImportRecords), ...invoices];
+    invoices = normalizeAll([...normalizeImport(currentParsedImportRecords), ...invoices]);
     localStorage.setItem('kendra_invoices_list', JSON.stringify(invoices));
     if(sb && currentBusiness?.id) __scheduleEntitySync('invoices');
   }
+
 
 
   importHistory.unshift({
@@ -8304,7 +8363,14 @@ function initDefaultSampleData(){
 }
 
 async function loadAll(){
-  initDefaultSampleData();
+  // Only fall back to localStorage cache if Supabase has NOT already hydrated the
+  // in-memory arrays. When __dataHydratedFromSupabase is true, the arrays already
+  // contain the authoritative cloud data — reading localStorage here would overwrite
+  // it with a potentially stale or empty local copy (e.g. on a new device / after
+  // clearing the browser, or in a fresh tab).
+  if(!__dataHydratedFromSupabase){
+    initDefaultSampleData();
+  }
   renderEmp();
   renderCust();
   renderInv();
@@ -8316,6 +8382,7 @@ async function loadAll(){
   renderDocuments();
   renderImportHistory();
   computeDashboard();
+  if(typeof computeHealthScore === 'function') computeHealthScore();
 }
 
 function initApp(){
