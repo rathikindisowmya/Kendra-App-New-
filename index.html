@@ -8112,14 +8112,16 @@ function readImportFile(file){
   reader.onload = function(e){
     try {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
+      // cellDates:true makes SheetJS parse date-formatted cells as JS Date objects
+      // instead of Excel serial numbers (e.g. 45241 → Date("2023-11-15"))
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
       
       let targetSheetName = workbook.SheetNames[0];
       let json = [];
 
       for(let i = 0; i < workbook.SheetNames.length; i++){
         const sn = workbook.SheetNames[i];
-        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sn], { defval: '' });
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sn], { defval: '', raw: false });
         if(rows && rows.length > 0){
           json = rows;
           targetSheetName = sn;
@@ -8131,6 +8133,48 @@ function readImportFile(file){
         showToast('The selected file contains no readable data rows', true);
         return;
       }
+
+      // ── Normalise date values across every imported row ───────────────────
+      // With cellDates:true + raw:false, dates come as ISO strings like
+      // "2023-11-15T00:00:00.000Z". We strip the time part to YYYY-MM-DD.
+      // Also handles: JS Date objects, Excel serials, DD/MM/YYYY, MM/DD/YYYY.
+      const toISODate = (v) => {
+        if(!v && v !== 0) return v;
+        // Already a JS Date
+        if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
+        const s = String(v).trim();
+        // ISO string with time component: "2023-11-15T00:00:00.000Z"
+        if(/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.slice(0,10);
+        // Already YYYY-MM-DD
+        if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        // DD/MM/YYYY or DD-MM-YYYY (common in India)
+        const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if(dmy) return `${dmy[3]}-${String(dmy[2]).padStart(2,'0')}-${String(dmy[1]).padStart(2,'0')}`;
+        // MM/DD/YYYY
+        const mdy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if(mdy) return `${mdy[3]}-${String(mdy[1]).padStart(2,'0')}-${String(mdy[2]).padStart(2,'0')}`;
+        // Excel serial number (numeric string, 5 digits, plausible range for dates)
+        if(/^\d{5}$/.test(s)){
+          const n = Number(s);
+          if(n > 25000 && n < 60000){ // roughly 1968–2064
+            const d = new Date(Date.UTC(1899,11,30) + n * 86400000);
+            return d.toISOString().slice(0,10);
+          }
+        }
+        return v; // not a recognisable date — leave as-is
+      };
+
+      // Common date-bearing column name patterns
+      const dateCols = /date|dob|joining|joined|hired|born|start|end|expiry|due|invoice|period|month|year/i;
+
+      json = json.map(row => {
+        const out = {};
+        for(const [k, v] of Object.entries(row)){
+          out[k] = dateCols.test(k) ? toISODate(v) : v;
+        }
+        return out;
+      });
+      // ─────────────────────────────────────────────────────────────────────
 
       validateAndPreviewImport(json, targetSheetName);
     } catch(err){
