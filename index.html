@@ -2,7 +2,7 @@
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kendra  -  Enterprise Business Operating System</title>
+<title>Kendra — Enterprise Business Operating System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com/">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1870,7 +1870,7 @@ html, body {
       <div class="brand-name">KENDRA</div>
       <div class="brand-sub">BUSINESS OS</div>
     </div>
-    <div class="sidebar-close" onclick="closeMobileSidebar()">X</div>
+    <div class="sidebar-close" onclick="closeMobileSidebar()">✕</div>
   </div>
 
   <div class="sidebar-scroll">
@@ -1896,7 +1896,7 @@ html, body {
       </button>
       <button class="nav-item" data-page="crm" onclick="showPage(&#39;crm&#39;)">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-        <span id="navCrmText">Customers</span>
+        <span id="navCrmText">🤝 Customers</span>
       </button>
       <button class="nav-item" data-page="suppliers" onclick="showPage(&#39;suppliers&#39;)">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
@@ -1959,7 +1959,7 @@ html, body {
     <div class="topbar">
       <div class="search-box">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
-        <input id="globalSearch" placeholder="Ask Copilot  -  e.g. &#39;Show low stock and overdue invoices&#39;">
+        <input id="globalSearch" placeholder="Ask Copilot — e.g. &#39;Show low stock and overdue invoices&#39;">
       </div>
       <div class="topbar-right">
         
@@ -1977,10 +1977,10 @@ html, body {
       <div class="page-desc">Real-time enterprise command center &amp; operational metrics.</div>
     </div>
     <div class="page-actions">
-      <button class="btn btn-secondary btn-sm" onclick="openModal(&#39;custModal&#39;)">+ Customer</button>
-      <button class="btn btn-secondary btn-sm" onclick="openModal(&#39;prodModal&#39;)">+ Product</button>
-      <button class="btn btn-secondary btn-sm" onclick="openEmployeeEditor()">+ Employee</button>
-      <button class="btn btn-primary btn-sm" onclick="openSmartInvoiceModal()">+ Invoice</button>
+      <button class="btn btn-secondary btn-sm" onclick="openModal(&#39;custModal&#39;)">👥 + Customer</button>
+      <button class="btn btn-secondary btn-sm" onclick="openModal(&#39;prodModal&#39;)">📦 + Product</button>
+      <button class="btn btn-secondary btn-sm" onclick="openEmployeeEditor()">👤 + Employee</button>
+      <button class="btn btn-primary btn-sm" onclick="openSmartInvoiceModal()">🧾 + Invoice</button>
     </div>
   </div>
 
@@ -1988,17 +1988,17 @@ html, body {
   <div class="grid g-4" style="margin-bottom:20px;">
     <div class="card stat-card">
       <div class="card-head"><div class="card-title">Revenue</div></div>
-      <div class="stat-value" id="dashRevVal">Rs. 0</div>
+      <div class="stat-value" id="dashRevVal">₹0</div>
       <div style="font-size:12px;color:var(--teal);margin-top:4px;">Current Period Invoiced</div>
     </div>
     <div class="card stat-card">
       <div class="card-head"><div class="card-title">Net Profit</div></div>
-      <div class="stat-value" id="dashProfitVal" style="color:var(--teal);">Rs. 0</div>
+      <div class="stat-value" id="dashProfitVal" style="color:var(--teal);">₹0</div>
       <div style="font-size:12px;color:var(--ink-faint);margin-top:4px;">Revenue minus Expenses</div>
     </div>
     <div class="card stat-card">
       <div class="card-head"><div class="card-title">Receivables</div></div>
-      <div class="stat-value" id="dashRecVal" style="color:var(--amber);">Rs. 0</div>
+      <div class="stat-value" id="dashRecVal" style="color:var(--amber);">₹0</div>
       <div style="font-size:12px;color:var(--ink-faint);margin-top:4px;">Outstanding Client Balance</div>
     </div>
     <div class="card stat-card">
@@ -2089,12 +2089,12 @@ html, body {
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="width:13px;height:13px;border-radius:3px;background:#1D9E74;display:inline-block;box-shadow:0 0 6px rgba(29,158,116,0.4);"></span>
           <span style="color:var(--ink);">Revenue:</span>
-          <span id="dashLegendRev" style="font-weight:700;color:#1D9E74;">Rs. 2,45,000</span>
+          <span id="dashLegendRev" style="font-weight:700;color:#1D9E74;">₹2,45,000</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="width:13px;height:13px;border-radius:3px;background:#E24B4A;display:inline-block;box-shadow:0 0 6px rgba(226,75,74,0.4);"></span>
           <span style="color:var(--ink);">Expenses:</span>
-          <span id="dashLegendExp" style="font-weight:700;color:#E24B4A;">Rs. 60,000</span>
+          <span id="dashLegendExp" style="font-weight:700;color:#E24B4A;">₹60,000</span>
         </div>
       </div>
     </div>
@@ -2165,7 +2165,7 @@ html, body {
           <option value="month">Last 30 Days</option>
           <option value="year">Year to Date</option>
         </select>
-        <button class="bh-btn-ghost" onclick="exportHealthReport()">Export</button>
+        <button class="bh-btn-ghost" onclick="exportHealthReport()">📄 Export</button>
         <button class="bh-btn-primary" onclick="loadAll()"><-  Refresh</button>
       </div>
     </div>
@@ -2364,7 +2364,7 @@ html, body {
         <span> - 6 Functional streams monitored in real-time</span>
       </div>
       <div>
-        <a onclick="openCopilot('Provide a strategic evaluation of our current business health scores')">Ask AI Copilot for Recommendations -></a>
+        <a onclick="openCopilot('Provide a strategic evaluation of our current business health scores')">✨ Ask AI Copilot for Recommendations -></a>
       </div>
     </div>
   </div>
@@ -2376,7 +2376,7 @@ html, body {
       <div class="page-head">
         <div><div class="page-title">Employee Management</div><div class="page-desc">Profiles, attendance, leave, performance, and documents.</div></div>
         <div class="page-actions">
-          <button class="btn btn-secondary" onclick="openImportFor(&#39;employees&#39;)" style="margin-right:8px;">Import Employees</button><button class="btn btn-primary" onclick="openEmployeeEditor()">+ Add Employee</button>
+          <button class="btn btn-secondary" onclick="openImportFor(&#39;employees&#39;)" style="margin-right:8px;">📥 Import Employees</button><button class="btn btn-primary" onclick="openEmployeeEditor()">+ Add Employee</button>
         </div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
@@ -2398,8 +2398,8 @@ html, body {
         <div id="empBulkToolbar" style="display:none;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:12px;align-items:center;gap:12px;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:12px;">
           <span id="empSelectedCount" style="font-weight:600;">0 selected</span>
-          <button class="btn btn-sm" id="empBulkEditBtn" style="background: var(--teal); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; display: none;" onclick="editSelectedEmp()">Edit Edit</button>
-          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteEmployees()">   -   Delete Selected</button>
+          <button class="btn btn-sm" id="empBulkEditBtn" style="background: var(--teal); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; display: none;" onclick="editSelectedEmp()">✏️ Edit</button>
+          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteEmployees()">🗑 Delete Selected</button>
         </div>
         <button class="btn btn-sm" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="clearEmpSelections()">Clear Selection</button>
       </div>
@@ -2417,14 +2417,14 @@ html, body {
       <div class="page-head">
         <div><div class="page-title" id="crmPageTitle">Customer Relationship Management</div><div class="page-desc" id="crmPageDesc">Purchase history, complaints, and follow-up reminders.</div></div>
         <div class="page-actions">
-          <button class="btn btn-secondary" onclick="openImportFor(&#39;customers&#39;)" style="margin-right:8px;">Import Customers</button><button class="btn btn-primary" id="crmAddBtn" onclick="openCustomerEditor()">+ Add Customer</button>
+          <button class="btn btn-secondary" onclick="openImportFor(&#39;customers&#39;)" style="margin-right:8px;">📥 Import Customers</button><button class="btn btn-primary" id="crmAddBtn" onclick="openCustomerEditor()">+ Add Customer</button>
         </div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
         <div class="card stat-card"><div class="card-title">Total Records</div><div class="stat-value" id="custTotal">50</div></div>
         <div class="card stat-card"><div class="card-title">Open Complaints</div><div class="stat-value" id="custComplaints">0</div></div>
         <div class="card stat-card"><div class="card-title">Follow-ups Due</div><div class="stat-value" id="custFollowups">0</div></div>
-        <div class="card stat-card"><div class="card-title">Avg. LTV</div><div class="stat-value" id="custAvgLtv">Rs. 0</div></div>
+        <div class="card stat-card"><div class="card-title">Avg. LTV</div><div class="stat-value" id="custAvgLtv">₹0</div></div>
       </div>
 
       <div class="toolbar-row">
@@ -2444,8 +2444,8 @@ html, body {
       <div id="custBulkToolbar" style="display:none;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:12px;align-items:center;gap:12px;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:12px;">
           <span id="custSelectedCount" style="font-weight:600;">0 selected</span>
-          <button class="btn btn-sm" id="custBulkEditBtn" style="background: var(--teal); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; display: none;" onclick="editSelectedCust()">Edit Edit</button>
-          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteCust()">   -   Delete Selected</button>
+          <button class="btn btn-sm" id="custBulkEditBtn" style="background: var(--teal); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; display: none;" onclick="editSelectedCust()">✏️ Edit</button>
+          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteCust()">🗑 Delete Selected</button>
         </div>
         <button class="btn btn-sm" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="clearCustSelection()">Clear Selection</button>
       </div>
@@ -2462,7 +2462,7 @@ html, body {
       <div class="page-head">
         <div><div class="page-title" id="invPageTitle">Inventory Management</div><div class="page-desc" id="invPageDesc">Stock levels, purchase prices, selling prices, and reorder alerts.</div></div>
         <div class="page-actions">
-          <button class="btn btn-secondary" onclick="openImportFor(&#39;products&#39;)" style="margin-right:8px;">Import Inventory</button><button class="btn btn-primary" id="invAddBtn2" onclick="openProductEditor()">+ Add Product</button>
+          <button class="btn btn-secondary" onclick="openImportFor(&#39;products&#39;)" style="margin-right:8px;">📥 Import Inventory</button><button class="btn btn-primary" id="invAddBtn2" onclick="openProductEditor()">+ Add Product</button>
         </div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
@@ -2488,8 +2488,8 @@ html, body {
       <div id="invBulkToolbar" style="display:none;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:12px;align-items:center;gap:12px;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:12px;">
           <span id="invSelectedCount" style="font-weight:600;">0 selected</span>
-          <button class="btn btn-sm" id="invBulkEditBtn" style="background: var(--teal); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; display: none;" onclick="editSelectedInv()">Edit Edit</button>
-          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteInv()">   -   Delete Selected</button>
+          <button class="btn btn-sm" id="invBulkEditBtn" style="background: var(--teal); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; display: none;" onclick="editSelectedInv()">✏️ Edit</button>
+          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteInv()">🗑 Delete Selected</button>
         </div>
         <button class="btn btn-sm" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="clearInvSelection()">Clear Selection</button>
       </div>
@@ -2511,7 +2511,7 @@ html, body {
         <div class="card stat-card"><div class="card-title">Suppliers</div><div class="stat-value" id="supplierCount">24</div></div>
         <div class="card stat-card"><div class="card-title">Active Vendors</div><div class="stat-value" id="supplierActive">24</div></div>
         <div class="card stat-card"><div class="card-title">Open POs</div><div class="stat-value" id="supplierPOs">2</div></div>
-        <div class="card stat-card"><div class="card-title">Upcoming Payables</div><div class="stat-value" id="supplierPayables">Rs. 1,24,000</div></div>
+        <div class="card stat-card"><div class="card-title">Upcoming Payables</div><div class="stat-value" id="supplierPayables">₹1,24,000</div></div>
       </div>
       <div class="toolbar-row">
         <div class="search-mini" style="margin-bottom:0;">
@@ -2523,8 +2523,8 @@ html, body {
       <div id="suppBulkToolbar" style="display:none;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:12px;align-items:center;gap:12px;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:12px;">
           <span id="suppSelectedCount" style="font-weight:600;">0 selected</span>
-          <button class="btn btn-sm" id="suppBulkEditBtn" style="background: var(--teal); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; display: none;" onclick="editSelectedSupp()">Edit Edit</button>
-          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteSupp()">   -   Delete Selected</button>
+          <button class="btn btn-sm" id="suppBulkEditBtn" style="background: var(--teal); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; display: none;" onclick="editSelectedSupp()">✏️ Edit</button>
+          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteSupp()">🗑 Delete Selected</button>
         </div>
         <button class="btn btn-sm" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="clearSuppSelection()">Clear Selection</button>
       </div>
@@ -2553,7 +2553,7 @@ html, body {
       <div id="goodsBulkToolbar" style="display:none;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:12px;align-items:center;gap:12px;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:12px;">
           <span id="goodsSelectedCount" style="font-weight:600;">0 selected</span>
-          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteGoods()">   -   Delete Selected</button>
+          <button class="btn btn-sm" style="background:var(--coral);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="bulkDeleteGoods()">🗑 Delete Selected</button>
         </div>
         <button class="btn btn-sm" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="clearGoodsSelection()">Clear Selection</button>
       </div>
@@ -2588,15 +2588,15 @@ html, body {
       <div class="page-head">
         <div><div class="page-title">Invoice &amp; Finance</div><div class="page-desc">Generate PDF invoices with product auto-prediction and discounts.</div></div>
         <div class="page-actions">
-          <button class="btn btn-ghost" onclick="openModal(&#39;ocrModal&#39;)">Scan Invoice (OCR)</button>
+          <button class="btn btn-ghost" onclick="openModal(&#39;ocrModal&#39;)">📄 Scan Invoice (OCR)</button>
           <button class="btn btn-primary" onclick="openSmartInvoiceModal()">+ Smart Invoice Generator</button>
         </div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
-        <div class="card stat-card"><div class="card-title">Revenue</div><div class="stat-value" id="finRevenue">Rs. 0</div></div>
-        <div class="card stat-card"><div class="card-title">Expenses</div><div class="stat-value" id="finExpenses">Rs. 0</div></div>
-        <div class="card stat-card"><div class="card-title">Net Profit</div><div class="stat-value" id="finProfit" style="color:var(--teal)">Rs. 0</div></div>
-        <div class="card stat-card"><div class="card-title">Pending Receivables</div><div class="stat-value" id="finPending" style="color:var(--coral)">Rs. 0</div></div>
+        <div class="card stat-card"><div class="card-title">Revenue</div><div class="stat-value" id="finRevenue">₹0</div></div>
+        <div class="card stat-card"><div class="card-title">Expenses</div><div class="stat-value" id="finExpenses">₹0</div></div>
+        <div class="card stat-card"><div class="card-title">Net Profit</div><div class="stat-value" id="finProfit" style="color:var(--teal)">₹0</div></div>
+        <div class="card stat-card"><div class="card-title">Pending Receivables</div><div class="stat-value" id="finPending" style="color:var(--coral)">₹0</div></div>
       </div>
 
       <div class="two-col" style="margin-bottom:16px;">
@@ -2656,7 +2656,7 @@ html, body {
           <button class="btn btn-primary" onclick="openModal(&#39;taskModal&#39;)">+ Assign Task</button>
         </div>
       </div>
-      <div class="kanban" id="kanbanBoard"><div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:16px;width:100%;align-items:flex-start;"><!-- TO DO COLUMN --><div class="kcol" style="background:#F5F4EF;border-radius:var(--radius);padding:14px;border:1px solid var(--line);min-height:480px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:700;font-size:14px;color:var(--ink);">To Do</span><span class="badge badge-teal">0</span></div><div style="text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:12.5px;">No tasks in To Do</div></div><!-- IN PROGRESS COLUMN --><div class="kcol" style="background:#F5F4EF;border-radius:var(--radius);padding:14px;border:1px solid var(--line);min-height:480px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:700;font-size:14px;color:var(--ink);">In Progress</span><span class="badge badge-amber">0</span></div><div style="text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:12.5px;">No active tasks</div></div><!-- DONE COLUMN --><div class="kcol" style="background:#F5F4EF;border-radius:var(--radius);padding:14px;border:1px solid var(--line);min-height:480px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:700;font-size:14px;color:var(--ink);">  ... Completed</span><span class="badge badge-green">0</span></div><div style="text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:12.5px;">No completed tasks yet</div></div></div></div>
+      <div class="kanban" id="kanbanBoard"><div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:16px;width:100%;align-items:flex-start;"><!-- TO DO COLUMN --><div class="kcol" style="background:#F5F4EF;border-radius:var(--radius);padding:14px;border:1px solid var(--line);min-height:480px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:700;font-size:14px;color:var(--ink);">📋 To Do</span><span class="badge badge-teal">0</span></div><div style="text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:12.5px;">No tasks in To Do</div></div><!-- IN PROGRESS COLUMN --><div class="kcol" style="background:#F5F4EF;border-radius:var(--radius);padding:14px;border:1px solid var(--line);min-height:480px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:700;font-size:14px;color:var(--ink);">⚡ In Progress</span><span class="badge badge-amber">0</span></div><div style="text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:12.5px;">No active tasks</div></div><!-- DONE COLUMN --><div class="kcol" style="background:#F5F4EF;border-radius:var(--radius);padding:14px;border:1px solid var(--line);min-height:480px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:700;font-size:14px;color:var(--ink);">  ... Completed</span><span class="badge badge-green">0</span></div><div style="text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:12.5px;">No completed tasks yet</div></div></div></div>
     </section>
 
     <!-- 9. DOCUMENTS PAGE -->
@@ -2833,7 +2833,7 @@ html, body {
   <div class="modal">
     <div class="modal-head">
       <span class="modal-title">User Profile &amp; Credentials Settings</span>
-      <span class="modal-close" onclick="closeModal(&#39;userProfileModal&#39;)">X</span>
+      <span class="modal-close" onclick="closeModal(&#39;userProfileModal&#39;)">✕</span>
     </div>
 
     <div class="detail-section" style="margin-bottom:16px;">
@@ -2903,12 +2903,12 @@ html, body {
         <div class="t" style="font-weight:700;font-size:15px;color:#fff;">Kendra AI Copilot</div>
         <div class="s" style="font-size:11.5px;color:#8FBDB0;">Real-time Business &amp; Operations Assistant</div>
       </div>
-      <span class="copilot-close" style="margin-left:auto;color:#aaa;font-size:20px;cursor:pointer;" onclick="closeCopilot()">X</span>
+      <span class="copilot-close" style="margin-left:auto;color:#aaa;font-size:20px;cursor:pointer;" onclick="closeCopilot()">✕</span>
     </div>
     <div class="copilot-body" id="copilotMsgBody" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--bg);">
       <div class="chat-msg bot">
         <div class="chat-bubble bot" style="background:var(--card-bg);border:1px solid var(--line);padding:14px;border-radius:10px;font-size:13px;line-height:1.5;">
-          Hello! I am your <b>Kendra AI Copilot</b>.<br>
+          👋 Hello! I am your <b>Kendra AI Copilot</b>.<br>
           I am connected to your live business operating data.<br><br>
           Ask me questions like:<br>
           - <i>"How is my business doing?"</i><br>
@@ -2919,9 +2919,9 @@ html, body {
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
-        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;How is my business financial performance?&#39;)">Financials &amp; Profit</div>
-        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;List all employees and status&#39;)">Workforce Status</div>
-        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;Stock alerts summary&#39;)">Inventory Alerts</div>
+        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;How is my business financial performance?&#39;)">📊 Financials &amp; Profit</div>
+        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;List all employees and status&#39;)">👥 Workforce Status</div>
+        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;Stock alerts summary&#39;)">📦 Inventory Alerts</div>
       </div>
     </div>
     <div class="copilot-input-row" style="border-top:1px solid var(--line);padding:12px 14px;display:flex;gap:8px;background:var(--card-bg);">
@@ -2941,7 +2941,7 @@ html, body {
         <div class="drawer-name" id="drawerTitle">Detail Title</div>
         <div class="drawer-sub" id="drawerSubtitle">Category / Subtitle</div>
       </div>
-      <span class="drawer-close" onclick="closeDrawer()">X</span>
+      <span class="drawer-close" onclick="closeDrawer()">✕</span>
     </div>
     <div class="drawer-body" id="drawerBody"></div>
     <div class="drawer-actions" id="drawerActions"></div>
@@ -2952,7 +2952,7 @@ html, body {
 
 <!-- Employee Modal -->
 <div class="modal-overlay" id="empModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title">Add / Edit Employee</span><span class="modal-close" onclick="closeModal(&#39;empModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Add / Edit Employee</span><span class="modal-close" onclick="closeModal(&#39;empModal&#39;)">✕</span></div>
   <input type="hidden" id="empEditId">
   <div class="form-row"><label>Full Name</label><input id="empName" placeholder="e.g. Priya Sharma"></div>
   <div class="form-2col">
@@ -2972,7 +2972,7 @@ html, body {
 </div></div>
 
 <div class="modal-overlay" id="bulkEditEmpModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title">Bulk Edit Selected Employees</span><span class="modal-close" onclick="closeModal(&#39;bulkEditEmpModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Bulk Edit Selected Employees</span><span class="modal-close" onclick="closeModal(&#39;bulkEditEmpModal&#39;)">✕</span></div>
   <div class="form-row"><label>Department</label><input id="bulkEmpDept" placeholder="Leave empty to keep existing"></div>
   <div class="form-row"><label>Designation / Role</label><input id="bulkEmpRole" placeholder="Leave empty to keep existing"></div>
   <div class="form-row"><label>Status</label>
@@ -2991,7 +2991,7 @@ html, body {
 
 <!-- Customer Modal -->
 <div class="modal-overlay" id="custModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title" id="custModalTitle">Add Customer</span><span class="modal-close" onclick="closeModal(&#39;custModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title" id="custModalTitle">Add Customer</span><span class="modal-close" onclick="closeModal(&#39;custModal&#39;)">✕</span></div>
   <input type="hidden" id="custEditId">
   <div class="form-row"><label id="custNameLabel">Name</label><input id="custName" placeholder="e.g. Om Traders"></div>
   <div class="form-2col">
@@ -3011,7 +3011,7 @@ html, body {
 
 <!-- Product Modal -->
 <div class="modal-overlay" id="prodModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title">Add / Edit Product</span><span class="modal-close" onclick="closeModal(&#39;prodModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Add / Edit Product</span><span class="modal-close" onclick="closeModal(&#39;prodModal&#39;)">✕</span></div>
   <input type="hidden" id="prodEditId">
   <div class="form-row"><label>Product / Item Name</label><input id="prodName" placeholder="e.g. Cement Mix 50kg"></div>
   <div class="form-row"><label>Supplier Name</label><input id="prodSupplier" placeholder="e.g. Balaji Traders"></div>
@@ -3038,7 +3038,7 @@ html, body {
         <span class="modal-title" id="dynamicRowModalTitle" style="font-size:18px;font-weight:700;color:var(--ink);">Edit Record</span>
         <div style="font-size:12.5px;color:var(--ink-faint);margin-top:3px;" id="dynamicRowModalSub">Editing active fields for this record</div>
       </div>
-      <span class="modal-close" style="cursor:pointer;font-size:18px;" onclick="closeModal(&#39;dynamicRowModal&#39;)">X</span>
+      <span class="modal-close" style="cursor:pointer;font-size:18px;" onclick="closeModal(&#39;dynamicRowModal&#39;)">✕</span>
     </div>
     <form id="dynamicRowForm" onsubmit="event.preventDefault(); saveDynamicRow();" style="display:flex;flex-direction:column;gap:14px;">
       <div id="dynamicRowFieldsContainer" style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:14px 16px;">
@@ -3054,7 +3054,7 @@ html, body {
 
 <!-- Supplier Modal -->
 <div class="modal-overlay" id="supplierModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title">Add / Edit Supplier</span><span class="modal-close" onclick="closeModal(&#39;supplierModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Add / Edit Supplier</span><span class="modal-close" onclick="closeModal(&#39;supplierModal&#39;)">✕</span></div>
   <input type="hidden" id="supplierEditId">
   <div class="form-row"><label>Supplier / Vendor Company</label><input id="supName" placeholder="e.g. Balaji Supplies Pvt Ltd"></div>
   <div class="form-2col">
@@ -3067,7 +3067,7 @@ html, body {
   </div>
   <div class="form-2col">
     <div class="form-row"><label>Payment Terms</label><select id="supTerms"><option value="Net 15">Net 15 Days</option><option value="Net 30" selected="">Net 30 Days</option><option value="Net 60">Net 60 Days</option><option value="COD">Cash on Delivery</option></select></div>
-    <div class="form-row"><label>Supplier Rating (1-5 *)</label><input id="supRating" type="number" step="0.1" value="5.0"></div>
+    <div class="form-row"><label>Supplier Rating (1-5 ⭐)</label><input id="supRating" type="number" step="0.1" value="5.0"></div>
   </div>
   <div class="form-row"><label>Address</label><input id="supAddress" placeholder="Factory / Office Address"></div>
   <div class="form-row"><label>Supplied Products (comma separated)</label><input id="supProducts" placeholder="Cement, Steel Rods, Bricks"></div>
@@ -3077,7 +3077,7 @@ html, body {
 
 <!-- Goods Movement Modal -->
 <div class="modal-overlay" id="goodsModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title">Record Goods Movement</span><span class="modal-close" onclick="closeModal(&#39;goodsModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Record Goods Movement</span><span class="modal-close" onclick="closeModal(&#39;goodsModal&#39;)">✕</span></div>
   <div class="form-row"><label>Movement Type</label>
     <select id="gmType">
       <option value="Goods Receipt">Goods Receipt (Incoming Stock)</option>
@@ -3101,7 +3101,7 @@ html, body {
 
 <!-- Smart Invoice Generator Modal (Enhanced with Product Prediction & Discount) -->
 <div class="modal-overlay" id="smartInvModal"><div class="modal modal-lg">
-  <div class="modal-head"><span class="modal-title">Smart Invoice Generator</span><span class="modal-close" onclick="closeModal(&#39;smartInvModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Smart Invoice Generator</span><span class="modal-close" onclick="closeModal(&#39;smartInvModal&#39;)">✕</span></div>
   <div class="form-2col">
     <div class="form-row"><label>Customer Name</label><input id="sinvCustomer" placeholder="Customer or Business Name"></div>
     <div class="form-row"><label>Customer Email</label><input id="sinvEmail" type="email" placeholder="customer@client.com"></div>
@@ -3144,23 +3144,23 @@ html, body {
     </div>
 
     <div style="text-align:right;margin-left:auto;">
-      <div style="font-size:12px;color:var(--ink-soft);">Subtotal: <span id="sinvSubtotal" style="font-family:var(--font-mono);font-weight:600;">Rs. 0</span></div>
-      <div style="font-size:12px;color:var(--coral);margin-top:2px;">Discount: -<span id="sinvDiscountAmt" style="font-family:var(--font-mono);font-weight:600;">Rs. 0</span></div>
-      <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">GST Tax: <span id="sinvTaxAmt" style="font-family:var(--font-mono);font-weight:600;">Rs. 0</span></div>
-      <div style="font-size:17px;font-weight:700;color:var(--teal-dark);margin-top:4px;">Grand Total: <span id="sinvGrandTotal" style="font-family:var(--font-mono);">Rs. 0</span></div>
+      <div style="font-size:12px;color:var(--ink-soft);">Subtotal: <span id="sinvSubtotal" style="font-family:var(--font-mono);font-weight:600;">₹0</span></div>
+      <div style="font-size:12px;color:var(--coral);margin-top:2px;">Discount: -<span id="sinvDiscountAmt" style="font-family:var(--font-mono);font-weight:600;">₹0</span></div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">GST Tax: <span id="sinvTaxAmt" style="font-family:var(--font-mono);font-weight:600;">₹0</span></div>
+      <div style="font-size:17px;font-weight:700;color:var(--teal-dark);margin-top:4px;">Grand Total: <span id="sinvGrandTotal" style="font-family:var(--font-mono);">₹0</span></div>
     </div>
   </div>
 
   <div class="form-actions" style="margin-top:18px;">
     <button class="btn btn-ghost" onclick="closeModal(&#39;smartInvModal&#39;)">Cancel</button>
     <button class="btn btn-ghost" onclick="previewInvoicePDF()">     Preview PDF</button>
-    <button class="btn btn-primary" onclick="saveAndSendInvoice()">Save &amp; Generate Invoice</button>
+    <button class="btn btn-primary" onclick="saveAndSendInvoice()">💾 Save &amp; Generate Invoice</button>
   </div>
 </div></div>
 
 <!-- Invoice Preview & Sheet Modal -->
 <div class="modal-overlay" id="invoiceSheetModal"><div class="modal modal-lg">
-  <div class="modal-head"><span class="modal-title">Invoice Sheet</span><span class="modal-close" onclick="closeModal(&#39;invoiceSheetModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Invoice Sheet</span><span class="modal-close" onclick="closeModal(&#39;invoiceSheetModal&#39;)">✕</span></div>
   <div id="invoiceSheetContainer"></div>
   <div class="form-actions" style="margin-top:16px;">
     <button class="btn btn-ghost" onclick="closeModal(&#39;invoiceSheetModal&#39;)">Close</button>
@@ -3171,7 +3171,7 @@ html, body {
 
 <!-- OCR Expense Modal -->
 <div class="modal-overlay" id="ocrModal" data-alt-id="expModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title">Upload Invoice for OCR AI</span><span class="modal-close" onclick="closeModal(&#39;ocrModal&#39;);resetOcr()">X</span></div>
+  <div class="modal-head"><span class="modal-title">Upload Invoice for OCR AI</span><span class="modal-close" onclick="closeModal(&#39;ocrModal&#39;);resetOcr()">✕</span></div>
   <div id="ocrStep1">
     <div style="border:2px dashed var(--line);border-radius:10px;padding:32px 20px;text-align:center;color:var(--ink-faint);font-size:13px;margin-bottom:14px;background:#FAF9F5;">
       Drop a PDF or photo of vendor invoice here<br><span style="font-size:11.5px;margin-top:4px;display:block;">Extracted vendor, total amount, date, and category automatically</span>
@@ -3192,7 +3192,7 @@ html, body {
 
 <!-- Task Modal -->
 <div class="modal-overlay" id="taskModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title">Assign Task</span><span class="modal-close" onclick="closeModal(&#39;taskModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Assign Task</span><span class="modal-close" onclick="closeModal(&#39;taskModal&#39;)">✕</span></div>
   <div class="form-row"><label>Task Title</label><input id="taskTitle" placeholder="e.g. Follow up with Om Traders on payment"></div>
   <div class="form-2col">
     <div class="form-row"><label>Assign To</label><input id="taskAssignee" placeholder="e.g. Priya Sharma"></div>
@@ -3204,7 +3204,7 @@ html, body {
 
 <!-- Document Modal -->
 <div class="modal-overlay" id="docModal"><div class="modal">
-  <div class="modal-head"><span class="modal-title">Upload Document</span><span class="modal-close" onclick="closeModal(&#39;docModal&#39;)">X</span></div>
+  <div class="modal-head"><span class="modal-title">Upload Document</span><span class="modal-close" onclick="closeModal(&#39;docModal&#39;)">✕</span></div>
   <div class="form-row"><label>Document Title</label><input id="docName" placeholder="e.g. Warehouse Lease Agreement"></div>
   <div class="form-row"><label>Category</label><select id="docCat"><option>Contracts</option><option>Bills</option><option>Policies</option><option>Employee Documents</option></select></div>
   <div class="form-row"><label>Select File</label><input id="docFile" type="file"></div>
@@ -4085,7 +4085,7 @@ async function __ensureWorkspace(user, pending){
     if(pu.error) throw pu.error;
     profile.business_id=business.id;
   }
-  currentBusiness=business||{name:'Kendra Enterprise',currency: 'Rs.',taxRate:18};
+  currentBusiness=business||{name:'Kendra Enterprise',currency: '₹',taxRate:18};
   currentUser={id:user.id,email:user.email||'',name:profile?.full_name || user.user_metadata?.full_name || (user.email||'').split('@')[0],businessName:business?.name||'Kendra Enterprise OS',businessId:business?.id||null,industry:business?.industry_type||'retail'};
   return {business,profile};
 }
@@ -4162,7 +4162,7 @@ async function saveNewPassword(){
 // ---------------------------------------------------------
 
 let currentUser = null;
-let currentBusiness = { name: 'Kendra Enterprise', currency: 'Rs.', taxRate: 18 };
+let currentBusiness = { name: 'Kendra Enterprise', currency: '₹', taxRate: 18 };
 
 function isSampleRecord(r){
   if(!r || typeof r !== 'object') return false;
@@ -4231,8 +4231,8 @@ function formatColumnHeader(str){
 
 function INR(n){
   const num = Number(n);
-  if(isNaN(num)) return 'Rs. 0';
-  return 'Rs. ' + num.toLocaleString('en-IN');
+  if(isNaN(num)) return '₹0';
+  return '₹' + num.toLocaleString('en-IN');
 }
 
 function todayStr(){
@@ -4412,7 +4412,7 @@ async function initAuth(){
     }
     sb.auth.onAuthStateChange(async (event,session)=>{
       if(event==='SIGNED_OUT'){
-        currentUser=null; currentBusiness={ name:'Kendra Enterprise', currency: 'Rs.', taxRate:18 }; __dataHydratedFromSupabase=false; __showAuthScreen();
+        currentUser=null; currentBusiness={ name:'Kendra Enterprise', currency: '₹', taxRate:18 }; __dataHydratedFromSupabase=false; __showAuthScreen();
       }
       if(event==='PASSWORD_RECOVERY'){
         __showAuthScreen();
@@ -4482,7 +4482,7 @@ async function doSignup(){
 
 async function doLogout(){
   try{ if(sb) await sb.auth.signOut(); }catch(err){ console.warn(err); }
-  currentUser=null; currentBusiness={ name:'Kendra Enterprise', currency: 'Rs.', taxRate:18 }; __dataHydratedFromSupabase=false;
+  currentUser=null; currentBusiness={ name:'Kendra Enterprise', currency: '₹', taxRate:18 }; __dataHydratedFromSupabase=false;
   __showAuthScreen();
   showToast('Signed out of Kendra workspace.');
 }
@@ -4813,6 +4813,7 @@ function renderDynamicTable(config){
   if(!activeRows.length){
     tbody.innerHTML = '<tr><td colspan="' + (excelColumns.length + 2) + '" style="text-align:center;padding:50px 20px;color:var(--ink-soft);">' +
       '' +
+      '<div style="font-size:36px;margin-bottom:10px;">📋</div>' +
       '<div style="font-weight:700;font-size:16px;color:var(--ink);margin-bottom:6px;">No ' + escapeHtml(entityName) + ' found</div>' +
       '<div style="font-size:13px;color:var(--ink-faint);max-width:420px;margin:0 auto 18px auto;line-height:1.5;">Click the button below to add your first record manually, or import your Excel/CSV spreadsheet with dynamic column reflection.</div>' +
       '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">' +
@@ -4857,8 +4858,8 @@ function renderDynamicTable(config){
     });
 
     rowHtml += '<td style="text-align:right;white-space:nowrap;">';
-    rowHtml += '<button class="icon-action" title="Edit" onclick="' + onEdit + '(\'' + rowId + '\')">Edit</button> ';
-    rowHtml += '<button class="icon-action danger" title="Delete" onclick="' + onDelete + '(\'' + rowId + '\')">Delete</button>';
+    rowHtml += '<button class="icon-action" title="Edit" onclick="' + onEdit + '(\'' + rowId + '\')">✏️ Edit</button> ';
+    rowHtml += '<button class="icon-action danger" title="Delete" onclick="' + onDelete + '(\'' + rowId + '\')">🗑</button>';
     rowHtml += '</td>';
 
     rowHtml += '</tr>';
@@ -6049,7 +6050,7 @@ function renderTasks(){
         '<div style="display:flex;gap:4px;">' +
           (t.status !== 'todo' ? '<button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:11px;" title="Move to To Do" onclick="moveTaskStatus(\'' + t.id + '\', \'todo\')">  -  </button>' : '') +
           (t.status !== 'in_progress' ? '<button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:11px;" title="Move to In Progress" onclick="moveTaskStatus(\'' + t.id + '\', \'in_progress\')"></button>' : '') +
-          (t.status !== 'done' ? '<button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:11px;color:var(--teal);" title="Mark Complete" onclick="moveTaskStatus(\'' + t.id + '\', \'done\')">[OK]</button>' : '') +
+          (t.status !== 'done' ? '<button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:11px;color:var(--teal);" title="Mark Complete" onclick="moveTaskStatus(\'' + t.id + '\', \'done\')">✔</button>' : '') +
         '</div>' +
       '</div>' +
     '</div>';
@@ -6059,7 +6060,7 @@ function renderTasks(){
     '<!-- TO DO COLUMN -->' +
     '<div class="kcol" style="background:#F5F4EF;border-radius:var(--radius);padding:14px;border:1px solid var(--line);min-height:480px;">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
-        '<span style="font-weight:700;font-size:14px;color:var(--ink);">To Do</span>' +
+        '<span style="font-weight:700;font-size:14px;color:var(--ink);">📋 To Do</span>' +
         '<span class="badge badge-teal">' + todoTasks.length + '</span>' +
       '</div>' +
       (todoTasks.length ? todoTasks.map(renderCard).join('') : '<div style="text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:12.5px;">No tasks in To Do</div>') +
@@ -6068,7 +6069,7 @@ function renderTasks(){
     '<!-- IN PROGRESS COLUMN -->' +
     '<div class="kcol" style="background:#F5F4EF;border-radius:var(--radius);padding:14px;border:1px solid var(--line);min-height:480px;">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
-        '<span style="font-weight:700;font-size:14px;color:var(--ink);">In Progress</span>' +
+        '<span style="font-weight:700;font-size:14px;color:var(--ink);">⚡ In Progress</span>' +
         '<span class="badge badge-amber">' + progTasks.length + '</span>' +
       '</div>' +
       (progTasks.length ? progTasks.map(renderCard).join('') : '<div style="text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:12.5px;">No active tasks</div>') +
@@ -6194,7 +6195,7 @@ function renderDocs(){
   };
 
   grid.innerHTML = filtered.map(d => {
-    const icon = catIcons[d.category] || 'DOC';
+    const icon = catIcons[d.category] || '📄';
     return '<div class="card doc-card" style="padding:18px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);">' +
       '<div>' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">' +
@@ -8694,12 +8695,12 @@ function openExpenseModal(){ openModal('ocrModal'); }
           <div style="font-size:11.5px;color:rgba(255,255,255,0.7);">Real-time Operations &amp; Business Assistant</div>
         </div>
       </div>
-      <span class="modal-close" style="color:#fff;font-size:20px;cursor:pointer;" onclick="closeCopilot()">X</span>
+      <span class="modal-close" style="color:#fff;font-size:20px;cursor:pointer;" onclick="closeCopilot()">✕</span>
     </div>
     <div id="copilotMessages" style="flex:1;padding:20px;overflow-y:auto;background:var(--bg);display:flex;flex-direction:column;gap:12px;">
       <div class="chat-msg bot">
         <div class="chat-bubble bot" style="background:var(--card-bg);border:1px solid var(--line);padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.5;">
-          Hello! I am your <b>Kendra AI Copilot</b>.<br>
+          👋 Hello! I am your <b>Kendra AI Copilot</b>.<br>
           I am connected to your live business operating data.<br><br>
           Ask me questions like:<br>
           - <i>"How is my business doing?"</i><br>
@@ -8722,7 +8723,7 @@ function openExpenseModal(){ openModal('ocrModal'); }
   <div class="modal" style="max-width:640px;width:95%;">
     <div class="modal-head">
       <span class="modal-title">Create New Invoice</span>
-      <span class="modal-close" onclick="closeModal(&#39;smartInvoiceModal&#39;)">X</span>
+      <span class="modal-close" onclick="closeModal(&#39;smartInvoiceModal&#39;)">✕</span>
     </div>
     <div class="form-row">
       <label>Customer</label>
@@ -8748,10 +8749,10 @@ function openExpenseModal(){ openModal('ocrModal'); }
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);margin-top:8px;">
       <div>
-        <div style="font-size:12px;color:var(--ink-faint);">Subtotal: <span id="sinvSubtotal">Rs. 0</span></div>
-        <div style="font-size:12px;color:var(--ink-faint);">GST (18%): <span id="sinvGST">Rs. 0</span></div>
+        <div style="font-size:12px;color:var(--ink-faint);">Subtotal: <span id="sinvSubtotal">₹0</span></div>
+        <div style="font-size:12px;color:var(--ink-faint);">GST (18%): <span id="sinvGST">₹0</span></div>
       </div>
-      <div style="font-size:18px;font-weight:800;color:var(--ink);">Grand Total: <span id="sinvGrandTotal">Rs. 0</span></div>
+      <div style="font-size:18px;font-weight:800;color:var(--ink);">Grand Total: <span id="sinvGrandTotal">₹0</span></div>
     </div>
     <div class="form-row" style="margin-top:8px;">
       <label>Notes (optional)</label>
@@ -8759,7 +8760,7 @@ function openExpenseModal(){ openModal('ocrModal'); }
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
       <button class="btn btn-ghost" onclick="closeModal(&#39;smartInvoiceModal&#39;)">Cancel</button>
-      <button class="btn btn-primary" onclick="saveAndSendInvoice()">Save &amp; Generate Invoice</button>
+      <button class="btn btn-primary" onclick="saveAndSendInvoice()">💾 Save &amp; Generate Invoice</button>
     </div>
   </div>
 </div>
@@ -8782,9 +8783,9 @@ function openExpenseModal(){ openModal('ocrModal'); }
 
     <!-- Quick Prompts / Chips -->
     <div style="padding:10px 14px;background:#F5F4EF;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;flex-shrink:0;">
-      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;Show revenue &amp; profit snapshot&#39;)">Financials</button>
-      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;Show low stock alert items&#39;)">Low Stock</button>
-      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;List employee workforce status&#39;)">Workforce</button>
+      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;Show revenue &amp; profit snapshot&#39;)">📊 Financials</button>
+      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;Show low stock alert items&#39;)">📦 Low Stock</button>
+      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;List employee workforce status&#39;)">👥 Workforce</button>
       <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;Show top customers by LTV&#39;)">     Customers</button>
     </div>
 
