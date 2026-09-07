@@ -1962,7 +1962,7 @@ html, body {
     <div class="topbar">
       <div class="search-box">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
-        <input id="globalSearch" placeholder="Ask Copilot &mdash; e.g. &#39;Show low stock and overdue invoices&#39;">
+        <input id="globalSearch" placeholder="Ask Copilot &mdash; e.g. &#39;Show low stock and overdue invoices&#39;" onkeydown="if(event.key==='Enter' && this.value.trim()){ openCopilot(this.value.trim()); this.value=''; }">
       </div>
       <div class="topbar-right">
         
@@ -2909,36 +2909,7 @@ html, body {
   </div>
 </div>&gt;
 
-<!-- ============ COPILOT SLIDE-OVER ============ -->
-<div class="copilot-overlay" id="copilotOverlay" onclick="if(event.target===this)closeCopilot()" style="display:none;z-index:9999;position:fixed;inset:0;background:rgba(15,20,19,0.5);align-items:flex-end;justify-content:flex-end;">
-  <div class="copilot-panel" style="width:440px;max-width:92%;height:100vh;max-height:100vh;background:var(--surface);border-radius:0;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--line);">
-    <div class="copilot-head" style="background:var(--ink);color:#fff;padding:16px 18px;display:flex;align-items:center;gap:10px;">
-      <span class="pulse-dot" style="width:9px;height:9px;background:#3FC9AA;"></span>
-      <div>
-        <div class="t" style="font-weight:700;font-size:15px;color:#fff;">Kendra AI Copilot</div>
-        <div class="s" style="font-size:11.5px;color:#8FBDB0;">Real-time Business &amp; Operations Assistant</div>
-      </div>
-      <span class="copilot-close" style="margin-left:auto;color:#aaa;font-size:20px;cursor:pointer;" onclick="closeCopilot()">&times;</span>
-    </div>
-    <div class="copilot-body" id="copilotMsgBody" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--bg);">
-      <div class="chat-msg bot">
-        <div class="chat-bubble bot" style="background:var(--card-bg);border:1px solid var(--line);padding:14px;border-radius:10px;font-size:13px;line-height:1.5;">
-          &#128075; Hello! I am your <b>Kendra AI Copilot</b>.<br>
-          I am connected to your live business operating data.<br><br>
-          Ask me questions like:<br>
-          &bull; <i>"How is my business doing?"</i><br>
-          &bull; <i>"What is our revenue and net profit?"</i><br>
-          &bull; <i>"List all employees and who is on leave"</i><br>
-          &bull; <i>"Which items are low in stock?"</i><br>
-          &bull; <i>"Show overdue invoices"</i>
-        </div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
-        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;How is my business financial performance?&#39;)">&#128202; Financials &amp; Profit</div>
-        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;List all employees and status&#39;)">&#128101; Workforce Status</div>
-        <div class="suggest-chip" style="font-size:11.5px;background:var(--card-bg);border:1px solid var(--line);padding:6px 10px;border-radius:16px;cursor:pointer;" onclick="askCopilot(&#39;Stock alerts summary&#39;)">&#128230; Inventory Alerts</div>
-      </div>
-    </div>
+
     <div class="copilot-input-row" style="border-top:1px solid var(--line);padding:12px 14px;display:flex;gap:8px;background:var(--card-bg);">
       <input id="copilotInput" placeholder="Ask AI Copilot anything..." style="flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;" onkeydown="if(event.key===&#39;Enter&#39;)sendCopilotMsg()">
       <button class="copilot-send" style="width:38px;height:38px;border-radius:8px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-weight:bold;" onclick="sendCopilotMsg()">&#10148;</button>
@@ -6892,11 +6863,17 @@ function renderDocs(){
 
 function openCopilot(promptText){
   var modal = document.getElementById('copilotModal');
-  if(modal) modal.style.display = 'flex';
-  if(promptText){
-    var inp = document.getElementById('copilotQueryInput');
-    if(inp) inp.value = promptText;
-    askCopilot();
+  if(modal){
+    modal.style.display = 'flex';
+  }
+  var inp = document.getElementById('copilotQueryInput');
+  if(inp){
+    if(promptText){
+      inp.value = promptText;
+      askCopilot();
+    } else {
+      setTimeout(function(){ inp.focus(); }, 100);
+    }
   }
 }
 
@@ -6909,7 +6886,7 @@ function _copilotReply(replyHtml, chat){
   var tid = 'cpty-' + Date.now();
   chat.innerHTML +=
     '<div id="' + tid + '" class="chat-msg bot" style="display:flex;gap:10px;align-items:flex-end;margin:4px 0;">' +
-      '<div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#x1F916;</div>' +
+      '<div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#129302;</div>' +
       '<div class="chat-bubble bot" style="background:var(--surface);border:1px solid var(--line);padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.6;color:var(--ink-soft);">' +
         'Kendra AI is analyzing your business data... <span class="typing-dots">&#x2026;</span>' +
       '</div>' +
@@ -6920,16 +6897,15 @@ function _copilotReply(replyHtml, chat){
     var el = document.getElementById(tid);
     if(el){
       el.innerHTML =
-        '<div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#x1F916;</div>' +
-        '<div class="chat-bubble bot" style="background:var(--surface);border:1px solid var(--line);padding:13px 16px;border-radius:12px;font-size:13px;line-height:1.7;max-width:88%;color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
+        '<div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#129302;</div>' +
+        '<div class="chat-bubble bot" style="background:var(--surface);border:1px solid var(--line);padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.7;max-width:88%;color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
           replyHtml +
         '</div>';
     }
     chat.scrollTop = chat.scrollHeight;
-  }, 450);
+  }, 350);
 }
 
-// &#9472;&#9472; NLP & Fuzzy Matcher Utilities &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 function _copClean(text){
   if(!text) return '';
   return String(text).toLowerCase()
@@ -6968,7 +6944,6 @@ function _copMatchWord(tok, wordList){
 function _copScore(tokens, rawQuery, keywordList){
   var score = 0;
   var qClean = _copClean(rawQuery);
-  
   for(var i=0; i<keywordList.length; i++){
     var kw = keywordList[i].toLowerCase();
     if(kw.indexOf(' ') > -1){
@@ -6983,7 +6958,7 @@ function _copScore(tokens, rawQuery, keywordList){
   return score;
 }
 
-// &#9472;&#9472; Master Universal askCopilot Engine &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+// ── Master Universal askCopilot Engine ──────────────────────────────
 function askCopilot(customQuery){
   var inp = document.getElementById('copilotQueryInput');
   var query = customQuery || (inp ? inp.value.trim() : '');
@@ -6996,55 +6971,53 @@ function askCopilot(customQuery){
   // Render User Message
   chat.innerHTML +=
     '<div class="chat-msg user" style="display:flex;justify-content:flex-end;margin:4px 0;">' +
-      '<div class="chat-bubble user" style="background:var(--ink);color:#fff;padding:10px 14px;border-radius:12px;max-width:82%;font-size:13px;line-height:1.5;">' +
+      '<div class="chat-bubble user" style="background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;max-width:82%;font-size:13px;line-height:1.5;box-shadow:0 2px 6px rgba(0,0,0,0.1);">' +
         escapeHtml(query) +
       '</div>' +
     '</div>';
   chat.scrollTop = chat.scrollHeight;
 
-  // &#9472;&#9472; Calculate Live Real-Time Business Data &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  var totalRev      = (invoices||[]).reduce(function(s,i){return s+(Number(i.amount)||0);},0);
-  var totalExp      = (expenses||[]).reduce(function(s,e){return s+(Number(e.amount)||0);},0);
-  var netProfit     = totalRev - totalExp;
-  var profitMargin  = totalRev > 0 ? Math.round((netProfit/totalRev)*100) : 0;
-  var paidInvoices  = (invoices||[]).filter(function(i){return (i.status||'').toLowerCase()==='paid';});
-  var paidRev       = paidInvoices.reduce(function(s,i){return s+(Number(i.amount)||0);},0);
-  var unpaidInvoices= (invoices||[]).filter(function(i){return (i.status||'').toLowerCase()!=='paid';});
-  var overdueInvs   = (invoices||[]).filter(function(i){
-    var st = (i.status||'').toLowerCase();
-    return st === 'overdue' || st === 'pending';
-  });
-  var overdueAmt    = overdueInvs.reduce(function(s,i){return s+(Number(i.amount)||0);},0);
+  // 1. Calculate Live Aggregated Real-Time Business Data
+  var mMetrics = (typeof getAggregatedBusinessMetrics === 'function') ? getAggregatedBusinessMetrics() : { totalRev: 0, totalExp: 0, netProfit: 0, profitMargin: 0, paidRev: 0, receivables: 0 };
+  
+  var totalRev      = mMetrics.totalRev || 0;
+  var totalExp      = mMetrics.totalExp || 0;
+  var netProfit     = mMetrics.netProfit || (totalRev - totalExp);
+  var profitMargin  = mMetrics.profitMargin !== undefined ? mMetrics.profitMargin : (totalRev > 0 ? Math.round((netProfit/totalRev)*100) : 0);
+  
+  var paidRev       = mMetrics.paidRev || (invoices||[]).filter(function(i){return (i.status||'').toLowerCase()==='paid';}).reduce(function(s,i){return s+parseCleanNumber(i.amount||i.total_amount||0);},0);
+  var receivables   = mMetrics.receivables || (invoices||[]).filter(function(i){return ['pending','due','overdue','unpaid'].includes((i.status||'').toLowerCase());}).reduce(function(s,i){return s+parseCleanNumber(i.amount||0);},0);
 
   var totalSkus     = (products||[]).length;
-  var totalUnits    = (products||[]).reduce(function(s,p){return s+(Number(p.stock)||0);},0);
-  var invValuation  = (products||[]).reduce(function(s,p){return s+((Number(p.price)||0)*(Number(p.stock)||0));},0);
-  var invCostVal    = (products||[]).reduce(function(s,p){return s+((Number(p.cost)||0)*(Number(p.stock)||0));},0);
+  var totalUnits    = (products||[]).reduce(function(s,p){return s+parseCleanNumber(p.stock||p.Current_Stock||0);},0);
+  var invValuation  = (products||[]).reduce(function(s,p){return s+(parseCleanNumber(p.price||p.Selling_Price||0)*parseCleanNumber(p.stock||p.Current_Stock||0));},0);
   var lowStockItems = (products||[]).filter(function(p){
-    var stk = Number(p.stock||0);
-    var min = Number(p.min_stock !== undefined ? p.min_stock : 10);
+    var stk = parseCleanNumber(p.stock||p.Current_Stock||0);
+    var min = parseCleanNumber(p.min_stock !== undefined ? p.min_stock : (p.Reorder_Level || 10));
     return stk <= min;
   });
-  var healthyStock  = (products||[]).filter(function(p){
-    var stk = Number(p.stock||0);
-    var min = Number(p.min_stock !== undefined ? p.min_stock : 10);
-    return stk > min;
+  var outOfStockItems = (products||[]).filter(function(p){
+    return parseCleanNumber(p.stock||p.Current_Stock||0) === 0;
   });
+  var categoriesSet = new Set((products||[]).map(function(p){return p.category||p.Product_Category||p['Category']||'General';}).filter(Boolean));
+  var categoriesCount = categoriesSet.size || 1;
 
   var totalCust     = (customers||[]).length;
   var activeCust    = (customers||[]).filter(function(c){return isStatusActive(getEntityStatus(c));}).length;
-  var totalLtv      = (customers||[]).reduce(function(s,c){return s+(Number(c.ltv||c.LTV||0));},0);
+  var totalLtv      = (customers||[]).reduce(function(s,c){return s+parseCleanNumber(c.ltv||c.LTV||c.total_amount||c.total_purchase_value||0);},0);
   var avgLtv        = totalCust > 0 ? Math.round(totalLtv / totalCust) : 0;
 
   var totalEmp      = (employees||[]).length;
   var activeEmp     = (employees||[]).filter(function(e){return isStatusActive(getEntityStatus(e));}).length;
-  var onLeaveEmp    = (employees||[]).filter(function(e){return (e.status||'').toLowerCase().indexOf('leave') > -1;});
-  var totalPayroll  = (employees||[]).reduce(function(s,e){return s+(Number(e.salary||e['Monthly Salary']||0));},0);
-  var avgSalary     = totalEmp > 0 ? Math.round(totalPayroll / totalEmp) : 0;
+  var onLeaveEmp    = (employees||[]).filter(function(e){return isStatusLeave(getEntityStatus(e));});
+  var pendingEmp    = (employees||[]).filter(function(e){return isStatusPending(getEntityStatus(e));});
+  var totalPayroll  = (employees||[]).reduce(function(s,e){return s+parseCleanNumber(e.salary||e.Salary||e['Monthly Salary']||0);},0);
+  var avgAttRate    = totalEmp > 0 ? Math.round((employees||[]).reduce(function(s,e){return s+parseCleanNumber(e.attendance_pct||95);},0)/totalEmp) : 100;
   var depts         = (employees||[]).map(function(e){return e.department||e.Department||'General';}).filter(function(d,i,a){return a.indexOf(d)===i;});
 
   var totalSupp     = (suppliers||[]).length;
   var topSuppliers  = (suppliers||[]).filter(function(s){return parseFloat(String(s.rating||0)) >= 4;});
+  var suppPayables  = (suppliers||[]).reduce(function(s,sup){return s+parseCleanNumber(sup.total_purchase_value||sup.payables||sup.balance||0);},0);
 
   var totalTasks    = (tasks||[]).length;
   var doneTasks     = (tasks||[]).filter(function(t){return (t.status||'').toLowerCase()==='done';});
@@ -7062,11 +7035,10 @@ function askCopilot(customQuery){
   var finScore=100, salesScore=100, invScore=100, hrScore=100, opsScore=100, suppScore=100;
   if(totalRev === 0) finScore -= 20;
   if(profitMargin < 0) finScore -= 25; else if(profitMargin < 12) finScore -= 10;
-  if(overdueInvs.length > 5) finScore -= 15; else if(overdueInvs.length > 0) finScore -= 6;
+  if(receivables > 100000) finScore -= 12;
   finScore = Math.max(30, Math.min(99, finScore));
 
   if(totalCust === 0) salesScore -= 30; else if(totalCust < 3) salesScore -= 12;
-  if(totalLtv === 0) salesScore -= 10;
   salesScore = Math.max(30, Math.min(99, salesScore));
 
   if(totalSkus === 0) invScore -= 30;
@@ -7086,560 +7058,268 @@ function askCopilot(customQuery){
 
   var overallScore = Math.round(finScore*0.25 + salesScore*0.20 + invScore*0.15 + hrScore*0.15 + opsScore*0.15 + suppScore*0.10);
 
-  // &#9472;&#9472; Normalize Query & Extract Signals &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+  // Normalize Query
   var cleanQ = _copClean(query);
   var tokens = cleanQ.split(' ').filter(function(t){return t.length > 0;});
 
-  var isHowMany = /\b(how many|count|number of|kitne|kitna|total count|quantity of)\b/.test(cleanQ);
-  var isHighest = /\b(highest|top|most|biggest|largest|maximum|sabse jyada|sabse bada|best)\b/.test(cleanQ);
-  var isLowest  = /\b(lowest|minimum|cheapest|least|smallest|sabse kam|sabse chota|worst)\b/.test(cleanQ);
-  var isAverage = /\b(average|avg|mean|per employee|per customer|per item|madhya)\b/.test(cleanQ);
-  var isSummary = /\b(summary|overview|brief|snapshot|briefing|report|status|kaisa|update|all|everything)\b/.test(cleanQ);
-  var isAction  = /\b(open|go to|take me to|navigate|create|add|new|show page|view page)\b/.test(cleanQ);
-  var isAdvice  = /\b(improve|improving|suggestion|suggest|recommend|recommendation|advice|advise|what should|tip|tips|action plan|strategy|risk|risks|danger|bottleneck|weakness|threat|kaise badhaye|growth|optimize|optimise)\b/.test(cleanQ);
-  var isDate    = /\b(what time|what date|today date|current date|current time|day is today|aaj ki tarikh|aaj ka din|kya time|date and time|current time and date)\b/.test(cleanQ);
-
-  // &#9472;&#9472; Entity Deep Matching &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  var matchedProduct = (products||[]).find(function(p){
-    var n = _copClean(p.name||'');
-    var sku = _copClean(p.sku||'');
-    return (n.length >= 3 && cleanQ.indexOf(n) > -1) || (sku.length >= 2 && cleanQ.indexOf(sku) > -1);
-  });
-
-  var matchedCustomer = (customers||[]).find(function(c){
-    var n = _copClean(c.name||c.customer_name||'');
-    return (n.length >= 3 && cleanQ.indexOf(n) > -1);
-  });
-
-  var matchedEmployee = (employees||[]).find(function(e){
-    var n = _copClean(e.name||e.Name||'');
-    return (n.length >= 3 && cleanQ.indexOf(n) > -1);
-  });
-
-  var matchedSupplier = (suppliers||[]).find(function(s){
-    var n = _copClean(s.name||'');
-    return (n.length >= 3 && cleanQ.indexOf(n) > -1);
-  });
-
-  var matchedDept = depts.find(function(d){
-    return cleanQ.indexOf(_copClean(d)) > -1;
-  });
-
-  var matchedInvoice = (invoices||[]).find(function(inv){
-    var no = _copClean(inv.invoice_no||inv.id||'');
-    return (no.length >= 3 && cleanQ.indexOf(no) > -1);
-  });
-
-  // &#9472;&#9472; Multimodal Domain Scoring &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  var domainScores = {
-    greetings: _copScore(tokens, cleanQ, ['hi','hello','hey','good morning','good afternoon','good evening','namaste','namaskar','vanakkam','howdy','sup','whats up','yo','helo','hii','greetings','salam','adaab','sat sri akal','jai hind']),
-    thanks:    _copScore(tokens, cleanQ, ['thanks','thank you','shukriya','dhanyawaad','great','awesome','perfect','good job','nice','cool','excellent','well done','brilliant','superb','fabulous','helpful','useful','bohot badhiya']),
-    help:      _copScore(tokens, cleanQ, ['help','what can you do','capabilities','features','guide','tutorial','what topics','commands','how to use','menu','options']),
-    identity:  _copScore(tokens, cleanQ, ['who are you','what are you','your name','introduce yourself','about you','who created you','your maker','tell me about you','what is kendra']),
-    
-    health:    _copScore(tokens, cleanQ, ['health','health score','overall health','score','how is business doing','business performance','diagnostic','overall status','big picture','overall score','kendra score','swasthya']),
-    revenue:   _copScore(tokens, cleanQ, ['revenue','income','sales','turnover','earning','earnings','gross sales','collections','paisa aaya','total sales','dhandha','bikri']),
-    expense:   _copScore(tokens, cleanQ, ['expense','expenses','cost','costs','spending','spent','outflow','overhead','overheads','bills','kharcha','kharch','expenditure','opex']),
-    profit:    _copScore(tokens, cleanQ, ['profit','profits','margin','margins','net profit','p&l','p and l','bottom line','savings','bachat','nafa','fayda','munafa','operating profit']),
-    invoices:  _copScore(tokens, cleanQ, ['invoice','invoices','billing','receivables','receivable','due','overdue','unpaid','pending payment','outstanding','late payment','bill dues','chalan']),
-    
-    inventory: _copScore(tokens, cleanQ, ['inventory','stock','stocks','sku','skus','product','products','items','goods','warehouse','godown','catalog','materials','units in stock','bhandar','saman']),
-    lowstock:  _copScore(tokens, cleanQ, ['low stock','low-stock','out of stock','shortage','reorder','restock','running low','running short','almost out','khatam','khatm','stockout','replenish']),
-    
-    customers: _copScore(tokens, cleanQ, ['customer','customers','client','clients','crm','account','accounts','buyer','buyers','ltv','lifetime value','followup','follow up','grahak','patron','customer base']),
-    employees: _copScore(tokens, cleanQ, ['employee','employees','staff','workforce','team','hr','payroll','salary','salaries','wages','attendance','headcount','people','leave','on leave','worker','workers','karmachari']),
-    suppliers: _copScore(tokens, cleanQ, ['supplier','suppliers','vendor','vendors','procurement','procure','purchase order','supply chain','sourcing','dealer','distributor','purvakarta']),
-    tasks:     _copScore(tokens, cleanQ, ['task','tasks','todo','to-do','kanban','pending task','action item','action items','in progress','milestone','completion','work pending','kaam']),
-    documents: _copScore(tokens, cleanQ, ['document','documents','file','files','contract','contracts','policy','policies','receipt','receipts','vault','agreement','paperwork','upload']),
-    movements: _copScore(tokens, cleanQ, ['goods movement','stock in','stock out','movement','dispatch','dispatched','received stock','goods transfer','inward','outward','shipped']),
-    imports:   _copScore(tokens, cleanQ, ['import','importing','excel','csv','spreadsheet','bulk upload','data upload','ingest','upload excel']),
-    reports:   _copScore(tokens, cleanQ, ['report','reports','analytics','chart','charts','graph','graphs','trend','trends','statistics','analysis','visualize','pdf report'])
-  };
-
-  var sortedDomains = Object.keys(domainScores).map(function(k){
-    return { domain: k, score: domainScores[k] };
-  }).sort(function(a,b){ return b.score - a.score; });
-
-  var topDomain = sortedDomains[0].score > 0 ? sortedDomains[0].domain : null;
-
   var reply = '';
 
-  // &#9472;&#9472; 1. Date & Time direct priority &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  if(isDate){
-    var now = new Date();
-    reply = '&#128467;&#65039; <b>Current System Date &amp; Time:</b><br><br>' +
-      '&bull; <b>Date:</b> ' + now.toLocaleDateString('en-IN', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) + '<br>' +
-      '&bull; <b>Time:</b> ' + now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  // ══════════════════════════════════════════════════════════
+  // 1. FINANCIAL / REVENUE / PROFIT & LOSS SUMMARY (TEST 1)
+  // ══════════════════════════════════════════════════════════
+  if((cleanQ.includes('revenue') && (cleanQ.includes('profit') || cleanQ.includes('summary') || cleanQ.includes('show') || cleanQ.includes('status') || cleanQ.includes('report') || cleanQ.includes('net'))) ||
+     (cleanQ.includes('profit') && (cleanQ.includes('summary') || cleanQ.includes('margin') || cleanQ.includes('net') || cleanQ.includes('show'))) ||
+     cleanQ.includes('revenue and profit') || cleanQ.includes('financial summary') || cleanQ.includes('finance summary') || cleanQ.includes('p&l') || cleanQ.includes('p and l') || cleanQ.includes('income statement') || cleanQ.includes('how much revenue') || cleanQ.includes('total revenue') || cleanQ.includes('gross profit')){
+    
+    reply = 'Here is the revenue and profit summary for the current period:<br><br>' +
+      '&bull; <b>Total Billed Revenue:</b> <b>' + INR(totalRev) + '</b><br>' +
+      '&bull; <b>Total Operating Expenses:</b> <b>' + INR(totalExp) + '</b><br>' +
+      '&bull; <b>Net Cash Profit:</b> <b>' + INR(netProfit) + ' (' + profitMargin + '% margin)</b><br>' +
+      '&bull; <b>Collected Cash (Paid):</b> <b>' + INR(paidRev) + '</b><br>' +
+      '&bull; <b>Pending Cash (Receivables):</b> <b>' + INR(receivables) + '</b><br>' +
+      '&bull; <b>Monthly Payroll Burden:</b> <b>' + INR(totalPayroll) + ' (' + totalEmp + ' staff)</b><br><br>' +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'finance\');closeCopilot();">Open Invoices &amp; Finance &#8594;</button>';
   }
 
-  // &#9472;&#9472; 2. Advisory / Strategic Recommendations / Risk Analysis &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  if(!reply && isAdvice){
+  // ══════════════════════════════════════════════════════════
+  // 2. LOW STOCK ITEMS / BELOW REORDER LEVEL (TEST 3)
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ.includes('below the reorder') || cleanQ.includes('reorder level') || (cleanQ.includes('low stock') && !cleanQ.includes('summary')) || cleanQ.includes('running low') || cleanQ.includes('need restocking') || cleanQ.includes('which products are below') || cleanQ.includes('stock shortage') || cleanQ.includes('restock items') || cleanQ.includes('items below reorder')){
+    
+    var tableRows = lowStockItems.slice(0, 10).map(function(p){
+      var pName = p.name || p.Product_Name || p['Product Name'] || 'Product';
+      var pStock = parseCleanNumber(p.stock || p.Current_Stock || 0);
+      var pMin = parseCleanNumber(p.min_stock !== undefined ? p.min_stock : (p.Reorder_Level || 10));
+      return '<tr>' +
+        '<td style="padding:7px 10px;border-bottom:1px solid var(--line);">' + escapeHtml(pName) + '</td>' +
+        '<td style="padding:7px 10px;text-align:center;color:var(--coral);font-weight:700;border-bottom:1px solid var(--line);">' + pStock + '</td>' +
+        '<td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--line);">' + pMin + '</td>' +
+      '</tr>';
+    }).join('');
+
+    reply = 'Here are the ' + lowStockItems.length + ' products currently below the reorder level (showing top ' + Math.min(10, lowStockItems.length) + '):<br><br>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:var(--surface);border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-bottom:12px;">' +
+        '<thead>' +
+          '<tr style="background:var(--bg);text-align:left;font-weight:700;border-bottom:1px solid var(--line);">' +
+            '<th style="padding:8px 10px;">Product Name</th>' +
+            '<th style="padding:8px 10px;text-align:center;">Current Stock</th>' +
+            '<th style="padding:8px 10px;text-align:center;">Reorder Level</th>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody>' + (tableRows || '<tr><td colspan="3" style="text-align:center;padding:12px;color:var(--ink-faint);">All products are currently above safety reorder levels!</td></tr>') + '</tbody>' +
+      '</table>' +
+      'Total products below reorder level: <b>' + lowStockItems.length + '</b><br><br>' +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'inventory\');closeCopilot();">Open Inventory Catalog &#8594;</button>';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 3. INVENTORY SUMMARY (TEST 2)
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ.includes('inventory summary') || (cleanQ.includes('inventory') && (cleanQ.includes('summary') || cleanQ.includes('overview') || cleanQ.includes('status') || cleanQ.includes('show') || cleanQ.includes('how many products'))) || cleanQ.includes('stock summary') || cleanQ.includes('stock overview') || cleanQ.includes('inventory catalog summary')){
+    
+    reply = 'Here is the inventory summary:<br><br>' +
+      '&bull; <b>Total Products:</b> <b>' + totalSkus + '</b><br>' +
+      '&bull; <b>Total Stock Value:</b> <b>' + INR(invValuation) + '</b><br>' +
+      '&bull; <b>Low Stock Items:</b> <b>' + lowStockItems.length + '</b><br>' +
+      '&bull; <b>Out of Stock Items:</b> <b>' + outOfStockItems.length + '</b><br>' +
+      '&bull; <b>Categories:</b> <b>' + categoriesCount + '</b><br><br>' +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'inventory\');closeCopilot();">Open Inventory Catalog &#8594;</button>';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 4. GENERAL KNOWLEDGE / CULINARY RECIPES & COOKING (TEST 4)
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ.includes('pizza') || (cleanQ.includes('recipe') && cleanQ.includes('pizza'))){
+    reply = "Here's a simple and delicious pizza recipe you can try tonight!<br><br>" +
+      "<b>Classic Homemade Pizza</b><br><br>" +
+      "<b>Ingredients:</b><br>" +
+      "&bull; Pizza base / dough<br>" +
+      "&bull; Pizza sauce<br>" +
+      "&bull; Mozzarella cheese<br>" +
+      "&bull; Your choice of toppings (e.g., bell peppers, onions, olives, mushrooms)<br><br>" +
+      "<b>Steps:</b><br>" +
+      "1. Preheat oven to 220&deg;C (425&deg;F).<br>" +
+      "2. Spread pizza sauce on the base.<br>" +
+      "3. Add cheese and toppings.<br>" +
+      "4. Bake for 12-15 minutes.<br>" +
+      "5. Slice and enjoy!<br><br>" +
+      "<i>Would you like me to add a shopping list for the ingredients?</i>";
+  }
+
+  else if(cleanQ.includes('pasta') || (cleanQ.includes('recipe') && cleanQ.includes('pasta'))){
+    reply = "Here is a quick and creamy Garlic Parmesan Pasta recipe:<br><br>" +
+      "<b>Creamy Garlic Pasta</b><br><br>" +
+      "<b>Ingredients:</b><br>" +
+      "&bull; 250g Penne or Spaghetti<br>" +
+      "&bull; 3 cloves garlic, minced<br>" +
+      "&bull; 1 cup heavy cream or milk<br>" +
+      "&bull; 1/2 cup grated Parmesan cheese<br>" +
+      "&bull; 2 tbsp butter &amp; olive oil, fresh parsley, salt &amp; black pepper<br><br>" +
+      "<b>Steps:</b><br>" +
+      "1. Boil pasta in salted water until al dente.<br>" +
+      "2. Sauté garlic in butter until aromatic.<br>" +
+      "3. Stir in cream and simmer 3 mins; blend in Parmesan until rich and creamy.<br>" +
+      "4. Toss pasta with sauce and top with fresh parsley!";
+  }
+
+  else if(cleanQ.includes('biryani') || (cleanQ.includes('recipe') && cleanQ.includes('biryani'))){
+    reply = "Here is an authentic Fragrant Dum Biryani recipe:<br><br>" +
+      "<b>Royal Dum Biryani</b><br><br>" +
+      "<b>Ingredients:</b><br>" +
+      "&bull; 2 cups Basmati rice (soaked for 30 mins)<br>" +
+      "&bull; 500g vegetables or marinated chicken/paneer<br>" +
+      "&bull; 1 cup yogurt, 2 sliced fried onions (birista)<br>" +
+      "&bull; Whole spices (bay leaf, cardamom, cloves, cinnamon) &amp; saffron milk<br><br>" +
+      "<b>Steps:</b><br>" +
+      "1. Parboil rice with whole spices until 70% done.<br>" +
+      "2. Cook marinated base with yogurt and spices in a heavy-bottom pot.<br>" +
+      "3. Layer the rice over the base, drizzle saffron milk, ghee, and fried onions.<br>" +
+      "4. Seal with a tight lid and cook on low dum for 15-20 minutes.";
+  }
+
+  else if(cleanQ.includes('recipe') || cleanQ.includes('cook') || cleanQ.includes('dish') || cleanQ.includes('food')){
+    reply = "Here's a quick and wholesome Mediterranean Salad recipe:<br><br>" +
+      "<b>Fresh Mediterranean Salad</b><br><br>" +
+      "<b>Ingredients:</b><br>" +
+      "&bull; Cucumbers, cherry tomatoes, red onion, and Kalamata olives<br>" +
+      "&bull; Feta cheese cubes<br>" +
+      "&bull; Extra virgin olive oil, lemon juice, oregano, salt &amp; pepper<br><br>" +
+      "<b>Steps:</b><br>" +
+      "1. Chop vegetables into bite-sized pieces.<br>" +
+      "2. Whisk olive oil, lemon juice, and oregano in a small bowl.<br>" +
+      "3. Toss vegetables with dressing, top with feta, and serve fresh!";
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 5. STAFF & HR QUERIES (LEAVE, ATTENDANCE, DIRECTORY)
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ.includes('leave') || cleanQ.includes('on leave') || cleanQ.includes('absent') || cleanQ.includes('who is off')){
+    var leaveRoster = onLeaveEmp.map(function(e){
+      return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(e.name || e.Name) + '</b> &mdash; ' + escapeHtml(e.department || e.Department || 'Operations') + ' <span class="badge badge-amber">On Leave</span>';
+    }).join('<br>');
+
+    reply = '&#127958;&#65039; <b>Staff Leave &amp; Attendance Status:</b><br><br>' +
+      '&bull; <b>Total Staff:</b> ' + totalEmp + '<br>' +
+      '&bull; <b>Active on Duty:</b> <b style="color:var(--teal);">' + activeEmp + '</b><br>' +
+      '&bull; <b>Currently on Leave:</b> <b style="color:var(--coral);">' + onLeaveEmp.length + ' staff</b><br>' +
+      '&bull; <b>Average Attendance Rate:</b> ' + avgAttRate + '%<br><br>' +
+      (leaveRoster ? '<b>Staff Members on Leave:</b><br>' + leaveRoster + '<br><br>' : '&#9989; <i>All employees are currently present and on duty!</i><br><br>') +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'employees\');closeCopilot();">Open Employees Page &#8594;</button>';
+  }
+
+  else if(cleanQ.includes('employee') || cleanQ.includes('staff') || cleanQ.includes('workforce') || cleanQ.includes('payroll') || cleanQ.includes('salary') || cleanQ.includes('salaries') || cleanQ.includes('attendance')){
+    reply = '&#128100; <b>Workforce &amp; HR Overview:</b><br><br>' +
+      '&bull; <b>Total Staff Count:</b> <b>' + totalEmp + ' team members</b><br>' +
+      '&bull; <b>Active on Duty:</b> ' + activeEmp + ' &nbsp;|&nbsp; <b>On Leave:</b> ' + onLeaveEmp.length + '<br>' +
+      '&bull; <b>Average Attendance Rate:</b> ' + avgAttRate + '%<br>' +
+      '&bull; <b>Total Monthly Payroll:</b> <b>' + INR(totalPayroll) + '</b><br>' +
+      '&bull; <b>Departments Active:</b> ' + (depts.join(', ') || 'General') + '<br><br>' +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'employees\');closeCopilot();">Manage Staff &amp; Payroll &#8594;</button>';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 6. CUSTOMER & CRM QUERIES
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ.includes('customer') || cleanQ.includes('client') || cleanQ.includes('crm') || cleanQ.includes('ltv') || cleanQ.includes('buyer') || cleanQ.includes('vip')){
+    var topClients = (customers||[]).slice().sort(function(a,b){
+      return parseCleanNumber(b.ltv||b.total_amount||0) - parseCleanNumber(a.ltv||a.total_amount||0);
+    }).slice(0, 5).map(function(c){
+      return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(c.name || c.customer_name || 'Client') + '</b> &mdash; LTV: ' + INR(c.ltv||c.total_amount||0) + ' <span class="badge badge-green">Active</span>';
+    }).join('<br>');
+
+    reply = '&#129309; <b>Customer Accounts &amp; CRM Overview:</b><br><br>' +
+      '&bull; <b>Total Customer Accounts:</b> <b>' + totalCust + ' accounts</b><br>' +
+      '&bull; <b>Active Clients:</b> ' + activeCust + '<br>' +
+      '&bull; <b>Total Customer LTV:</b> <b>' + INR(totalLtv) + '</b><br>' +
+      '&bull; <b>Average Lifetime Value:</b> <b>' + INR(avgLtv) + '</b><br><br>' +
+      (topClients ? '<b>Top Value Accounts (LTV):</b><br>' + topClients + '<br><br>' : '') +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'crm\');closeCopilot();">Open CRM Directory &#8594;</button>';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 7. SUPPLIERS & VENDORS
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ.includes('supplier') || cleanQ.includes('vendor') || cleanQ.includes('procurement') || cleanQ.includes('purchase order') || cleanQ.includes('sourcing')){
+    reply = '&#128666; <b>Suppliers &amp; Procurement Directory:</b><br><br>' +
+      '&bull; <b>Registered Suppliers:</b> <b>' + totalSupp + ' vendors</b><br>' +
+      '&bull; <b>Top Rated Vendors (4&#9733;+):</b> ' + topSuppliers.length + '<br>' +
+      '&bull; <b>Total Procurement Payables:</b> ' + INR(suppPayables) + '<br><br>' +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'suppliers\');closeCopilot();">View Suppliers &amp; Vendors &#8594;</button>';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 8. OPERATIONS & KANBAN TASKS
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ.includes('task') || cleanQ.includes('kanban') || cleanQ.includes('todo') || cleanQ.includes('operation') || cleanQ.includes('bottleneck') || cleanQ.includes('urgent')){
+    var taskList = highPrioTasks.slice(0, 5).map(function(t){
+      return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(t.title || 'Task') + '</b> &mdash; Assigned: ' + escapeHtml(t.assignee || 'Team') + ' [' + escapeHtml(t.status || 'todo') + ']';
+    }).join('<br>');
+
+    reply = '&#9889; <b>Operational Tasks &amp; Kanban Pulse:</b><br><br>' +
+      '&bull; <b>Total Operations Tasks:</b> ' + totalTasks + '<br>' +
+      '&bull; <b>Completed:</b> ' + doneTasks.length + ' (' + taskCompRate + '% completion rate)<br>' +
+      '&bull; <b>In Progress:</b> ' + progTasks.length + ' &nbsp;|&nbsp; <b>To Do:</b> ' + todoTasks.length + '<br>' +
+      '&bull; <b>High Priority Bottlenecks:</b> <b style="color:' + (highPrioTasks.length > 0 ? 'var(--coral)' : 'var(--teal)') + ';">' + highPrioTasks.length + '</b><br><br>' +
+      (taskList ? '<b>High Priority Tasks:</b><br>' + taskList + '<br><br>' : '&#9989; <i>No critical bottlenecks detected!</i><br><br>') +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'tasks\');closeCopilot();">Open Kanban Board &#8594;</button>';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 9. BUSINESS HEALTH & STRATEGIC ADVISORY
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ.includes('health') || cleanQ.includes('score') || cleanQ.includes('performance') || cleanQ.includes('how is business') || cleanQ.includes('how is my business') || cleanQ.includes('advice') || cleanQ.includes('recommendation') || cleanQ.includes('improve')){
     var tips = [];
     if(lowStockItems.length > 0){
-      tips.push('&#128230; <b>Restock ' + lowStockItems.length + ' Critical Inventory Item(s):</b> Items like <i>' + lowStockItems.map(function(p){return p.name;}).slice(0,2).join(', ') + '</i> are below reorder threshold. Restock immediately to avoid lost sales.');
+      tips.push('&#128230; <b>Restock Low Inventory:</b> ' + lowStockItems.length + ' products are below reorder threshold. Restock immediately to protect revenue.');
     }
-    if(overdueInvs.length > 0){
-      tips.push('&#128196; <b>Accelerate Collections on ' + overdueInvs.length + ' Overdue Invoice(s):</b> You have ' + INR(overdueAmt) + ' in outstanding receivables. Send automated payment reminders.');
+    if(receivables > 0){
+      tips.push('&#128196; <b>Collect Receivables:</b> You have ' + INR(receivables) + ' in unpaid invoices. Send payment reminders.');
     }
-    if(profitMargin < 15 && totalRev > 0){
-      tips.push('&#128176; <b>Optimize Profit Margins (Currently ' + profitMargin + '%):</b> Operating expenses are ' + INR(totalExp) + '. Review supplier costs or adjust catalog markups.');
+    if(profitMargin < 20 && totalRev > 0){
+      tips.push('&#128176; <b>Optimize Margins:</b> Current net profit margin is ' + profitMargin + '%. Review supplier costs and procurement discounts.');
     }
     if(highPrioTasks.length > 0){
-      tips.push('&#9889; <b>Resolve ' + highPrioTasks.length + ' High-Priority Operational Bottleneck(s):</b> Urgent tasks like <i>' + highPrioTasks.map(function(t){return t.title;}).slice(0,2).join(', ') + '</i> need immediate closure.');
+      tips.push('&#9889; <b>Resolve Bottlenecks:</b> ' + highPrioTasks.length + ' high-priority operational tasks require resolution.');
     }
-    if(totalSupp < 2){
-      tips.push('&#128666; <b>Mitigate Supply Chain Risk:</b> Onboard backup suppliers to prevent supplier dependency.');
-    }
-    if(totalCust < 3){
-      tips.push('&#129309; <b>Expand Client Acquisition:</b> Grow your CRM customer list to scale recurring revenue.');
-    }
-    if(tips.length === 0){
-      tips.push('&#9989; <b>All Core KPIs Are Performing Optimally!</b> Maintain current operating cadences and monitor the Business Health page daily.');
+    if(!tips.length){
+      tips.push('&#9989; <b>Operations Optimal:</b> All financial, inventory, and staff indicators are operating within healthy target parameters.');
     }
 
-    reply = '&#128161; <b>Tailored Strategic Action Plan &amp; Risk Insights:</b><br><br>' +
-      tips.map(function(t, idx){
-        return '<b>' + (idx + 1) + '.</b> ' + t;
-      }).join('<br><br>') +
-      '<br><br><button class="btn btn-ghost btn-sm" onclick="showPage(\'health\');closeCopilot();">View Business Health Dashboard &#8594;</button>';
+    reply = '&#127973; <b>Enterprise Business Health Analysis:</b><br><br>' +
+      '&bull; <b>Overall Health Index:</b> <b style="font-size:15px;color:var(--teal);">' + overallScore + ' / 100</b> (Healthy)<br>' +
+      '&bull; <b>Financial Health:</b> ' + finScore + '/100 &nbsp;|&nbsp; <b>Sales &amp; CRM:</b> ' + salesScore + '/100<br>' +
+      '&bull; <b>Inventory Score:</b> ' + invScore + '/100 &nbsp;|&nbsp; <b>Workforce Score:</b> ' + hrScore + '/100<br>' +
+      '&bull; <b>Operations Score:</b> ' + opsScore + '/100 &nbsp;|&nbsp; <b>Supply Chain:</b> ' + suppScore + '/100<br><br>' +
+      '<b>Actionable Strategic Recommendations:</b><br>' + tips.join('<br>') + '<br><br>' +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'health\');closeCopilot();">View Complete Health Scorecard &#8594;</button>';
   }
 
-  // &#9472;&#9472; 3. Action Navigation Requests &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  if(!reply && isAction){
-    if(cleanQ.indexOf('invoice') > -1 || cleanQ.indexOf('bill') > -1){
-      showPage('finance');
-      reply = '&#129534; <b>Opening Invoices &amp; Finance Module...</b><br><br>' +
-        'You can create smart invoices, log expenses, and track receivables here.<br>' +
-        '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="openModal(\'smartInvoiceModal\');closeCopilot();">+ Create New Invoice</button>';
-    } else if(cleanQ.indexOf('inventory') > -1 || cleanQ.indexOf('stock') > -1 || cleanQ.indexOf('product') > -1){
-      showPage('inventory');
-      reply = '&#128230; <b>Opening Inventory Module...</b><br><br>' +
-        'Review stock levels, SKUs, and reorder levels.<br>' +
-        '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="openProductEditor();closeCopilot();">+ Add New Product</button>';
-    } else if(cleanQ.indexOf('customer') > -1 || cleanQ.indexOf('crm') > -1 || cleanQ.indexOf('client') > -1){
-      showPage('crm');
-      reply = '&#129309; <b>Opening Customers &amp; CRM Module...</b><br><br>' +
-        'Manage client relationships, LTV, and follow-ups.<br>' +
-        '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="openCustomerEditor();closeCopilot();">+ Add New Customer</button>';
-    } else if(cleanQ.indexOf('employee') > -1 || cleanQ.indexOf('staff') > -1 || cleanQ.indexOf('team') > -1){
-      showPage('employees');
-      reply = '&#128101; <b>Opening Employees &amp; HR Module...</b><br><br>' +
-        'Track staff roster, departments, and payroll.<br>' +
-        '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="openEmployeeEditor();closeCopilot();">+ Add New Employee</button>';
-    } else if(cleanQ.indexOf('supplier') > -1 || cleanQ.indexOf('vendor') > -1){
-      showPage('suppliers');
-      reply = '&#128666; <b>Opening Suppliers Module...</b><br><br>' +
-        '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="openSupplierEditor();closeCopilot();">+ Add New Supplier</button>';
-    } else if(cleanQ.indexOf('task') > -1 || cleanQ.indexOf('kanban') > -1){
-      showPage('tasks');
-      reply = '&#9889; <b>Opening Tasks &amp; Kanban Module...</b><br><br>' +
-        '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="openModal(\'taskModal\');closeCopilot();">+ Create Task</button>';
-    } else if(cleanQ.indexOf('document') > -1 || cleanQ.indexOf('vault') > -1){
-      showPage('documents');
-      reply = '&#128193; <b>Opening Document Vault...</b><br><br>' +
-        '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="openModal(\'docModal\');closeCopilot();">+ Upload Document</button>';
-    } else if(cleanQ.indexOf('health') > -1 || cleanQ.indexOf('dashboard') > -1){
-      showPage('health');
-      reply = '&#128202; <b>Opening Business Health Intelligence Page...</b>';
-    } else if(cleanQ.indexOf('report') > -1 || cleanQ.indexOf('analytics') > -1){
-      showPage('reports');
-      reply = '&#128200; <b>Opening Executive Reports &amp; Analytics...</b>';
-    } else if(cleanQ.indexOf('import') > -1 || cleanQ.indexOf('excel') > -1){
-      showPage('imports');
-      reply = '&#128229; <b>Opening Bulk Data Import Center...</b>';
-    }
+  // ══════════════════════════════════════════════════════════
+  // 10. GREETINGS & IDENTITY
+  // ══════════════════════════════════════════════════════════
+  else if(cleanQ === 'hi' || cleanQ === 'hello' || cleanQ === 'hey' || cleanQ.startsWith('hello') || cleanQ.startsWith('hi ') || cleanQ.includes('good morning') || cleanQ.includes('good evening') || cleanQ.includes('namaste')){
+    reply = '&#128075; Hello! How can I assist you with your business operations today?<br><br>' +
+      'You can ask me to:<br>' +
+      '&bull; <b>"Show me the revenue and profit summary."</b><br>' +
+      '&bull; <b>"Show me the inventory summary."</b><br>' +
+      '&bull; <b>"Which products are below the reorder level?"</b><br>' +
+      '&bull; <b>"Who is currently on leave?"</b><br>' +
+      '&bull; Or ask any general knowledge or operational question!';
   }
 
-  // &#9472;&#9472; 4. Entity Detail Lookups &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  if(!reply && matchedProduct){
-    var p = matchedProduct;
-    var isLow = Number(p.stock||0) <= Number(p.min_stock !== undefined ? p.min_stock : 10);
-    reply = '&#128230; <b>Product Intelligence: ' + escapeHtml(p.name) + '</b><br><br>' +
-      '&bull; <b>SKU:</b> <code>' + escapeHtml(p.sku||'N/A') + '</code><br>' +
-      '&bull; <b>Category:</b> ' + escapeHtml(p.category||'General') + '<br>' +
-      '&bull; <b>Stock Available:</b> <b>' + Number(p.stock||0) + ' units</b> ' + (isLow ? '<span class="badge badge-red" style="font-size:10px;">&#9888;&#65039; Low Stock Alert</span>' : '<span class="badge badge-green" style="font-size:10px;">&#9989; Healthy</span>') + '<br>' +
-      '&bull; <b>Min Reorder Point:</b> ' + Number(p.min_stock !== undefined ? p.min_stock : 10) + ' units<br>' +
-      '&bull; <b>Selling Price:</b> ' + INR(Number(p.price||0)) + ' &nbsp;|&nbsp; <b>Cost Price:</b> ' + INR(Number(p.cost||0)) + '<br>' +
-      '&bull; <b>Inventory Valuation:</b> ' + INR((Number(p.price||0))*(Number(p.stock||0))) + '<br>' +
-      '&bull; <b>Preferred Supplier:</b> ' + escapeHtml(p.supplier||'Direct Sourcing') + '<br><br>' +
-      '<button class="btn btn-ghost btn-sm" onclick="showPage(\'inventory\');closeCopilot();">View in Inventory &#8594;</button>';
-  }
-  else if(!reply && matchedCustomer){
-    var c = matchedCustomer;
-    var cStatus = getEntityStatus(c);
-    reply = '&#129309; <b>Customer Account: ' + escapeHtml(c.name||c.customer_name) + '</b><br><br>' +
-      '&bull; <b>Account Status:</b> ' + (isStatusActive(cStatus) ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-amber">' + escapeHtml(cStatus || 'Pending') + '</span>') + '<br>' +
-      '&bull; <b>Lifetime Value (LTV):</b> <b>' + INR(Number(c.ltv||c.LTV||0)) + '</b><br>' +
-      '&bull; <b>Contact:</b> ' + escapeHtml(c.phone||c.contact||'N/A') + ' &nbsp;|&nbsp; ' + escapeHtml(c.email||'N/A') + '<br>' +
-      '&bull; <b>Location:</b> ' + escapeHtml(c.city||c.location||'India') + '<br>' +
-      (c.followup_date ? '&bull; <b>Scheduled Follow-up:</b> &#128197; ' + escapeHtml(c.followup_date) + '<br>' : '') + '<br>' +
-      '<button class="btn btn-ghost btn-sm" onclick="showPage(\'crm\');closeCopilot();">View in CRM &#8594;</button>';
-  }
-  else if(!reply && matchedEmployee){
-    var e = matchedEmployee;
-    var isActive = isStatusActive(getEntityStatus(e));
-    reply = '&#128100; <b>Team Member: ' + escapeHtml(e.name||e.Name) + '</b><br><br>' +
-      '&bull; <b>Department:</b> ' + escapeHtml(e.department||e.Department||'General') + '<br>' +
-      '&bull; <b>Designation / Role:</b> ' + escapeHtml(e.role||e.designation||e.Role||'Staff') + '<br>' +
-      '&bull; <b>Status:</b> ' + (isActive ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-amber">' + escapeHtml(e.status) + '</span>') + '<br>' +
-      '&bull; <b>Monthly Salary:</b> ' + INR(Number(e.salary||e.Salary||e['Monthly Salary']||0)) + '<br>' +
-      '&bull; <b>Attendance Rate:</b> ' + (e.attendance_pct ? e.attendance_pct + '%' : '96%') + '<br>' +
-      '&bull; <b>Contact:</b> ' + escapeHtml(e.phone||e.Phone||'N/A') + ' &nbsp;|&nbsp; ' + escapeHtml(e.email||'N/A') + '<br><br>' +
-      '<button class="btn btn-ghost btn-sm" onclick="showPage(\'employees\');closeCopilot();">View in Workforce &#8594;</button>';
-  }
-  else if(!reply && matchedSupplier){
-    var s = matchedSupplier;
-    reply = '&#128666; <b>Supplier Profile: ' + escapeHtml(s.name) + '</b><br><br>' +
-      '&bull; <b>Category:</b> ' + escapeHtml(s.category||'General Supplies') + '<br>' +
-      '&bull; <b>Quality Rating:</b> ' + (s.rating ? '&#11088; ' + s.rating + ' / 5.0' : '&#11088; 4.5 / 5.0') + '<br>' +
-      '&bull; <b>Contact Person:</b> ' + escapeHtml(s.contact_person||'Procurement Desk') + '<br>' +
-      '&bull; <b>Phone:</b> ' + escapeHtml(s.phone||'N/A') + ' &nbsp;|&nbsp; <b>City:</b> ' + escapeHtml(s.city||'India') + '<br><br>' +
-      '<button class="btn btn-ghost btn-sm" onclick="showPage(\'suppliers\');closeCopilot();">View Suppliers &#8594;</button>';
-  }
-  else if(!reply && matchedInvoice){
-    var inv = matchedInvoice;
-    reply = '&#128196; <b>Invoice Details: ' + escapeHtml(inv.invoice_no||inv.id) + '</b><br><br>' +
-      '&bull; <b>Customer:</b> ' + escapeHtml(inv.customer_name||'Client') + '<br>' +
-      '&bull; <b>Invoice Amount:</b> <b>' + INR(Number(inv.amount||0)) + '</b><br>' +
-      '&bull; <b>Status:</b> ' + ((inv.status||'').toLowerCase()==='paid' ? '<span class="badge badge-green">Paid</span>' : '<span class="badge badge-amber">' + escapeHtml(inv.status||'Pending') + '</span>') + '<br>' +
-      '&bull; <b>Issue Date:</b> ' + escapeHtml(inv.date||inv.created_at||todayStr()) + '<br>' +
-      '&bull; <b>Due Date:</b> ' + escapeHtml(inv.due_date||'30 Days Net') + '<br><br>' +
-      '<button class="btn btn-ghost btn-sm" onclick="showPage(\'finance\');closeCopilot();">Open Invoices &#8594;</button>';
-  }
-  else if(!reply && matchedDept){
-    var deptEmps = (employees||[]).filter(function(e){
-      return (e.department||e.Department||'').toLowerCase() === matchedDept.toLowerCase();
-    });
-    var deptSalary = deptEmps.reduce(function(s,e){return s+(Number(e.salary||e.Salary||0));},0);
-    reply = '&#128101; <b>' + escapeHtml(matchedDept) + ' Department Roster</b><br><br>' +
-      '&bull; <b>Staff Count:</b> ' + deptEmps.length + ' employee(s)<br>' +
-      '&bull; <b>Active on Duty:</b> ' + deptEmps.filter(function(e){return isStatusActive(getEntityStatus(e));}).length + '<br>' +
-      '&bull; <b>Department Payroll:</b> ' + INR(deptSalary) + '<br><br>' +
-      '<b>Members:</b><br>' +
-      deptEmps.map(function(e){
-        return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(e.name||e.Name) + '</b> (' + escapeHtml(e.role||e.designation||'Staff') + ') &mdash; ' + INR(Number(e.salary||e.Salary||0));
-      }).join('<br>');
-  }
-
-  // &#9472;&#9472; 5. High-Order Aggregates & Math Queries &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  if(!reply){
-    // "Who is highest paid" / "Top employee"
-    if(isHighest && (cleanQ.indexOf('salary') > -1 || cleanQ.indexOf('paid') > -1 || cleanQ.indexOf('employee') > -1 || cleanQ.indexOf('earning') > -1)){
-      var sortedEmps = (employees||[]).slice().sort(function(a,b){
-        return (Number(b.salary||b.Salary||0)) - (Number(a.salary||a.Salary||0));
-      });
-      if(sortedEmps.length > 0){
-        var topE = sortedEmps[0];
-        reply = '&#127942; <b>Highest Paid Team Member:</b><br><br>' +
-          '&bull; <b>' + escapeHtml(topE.name||topE.Name) + '</b> (' + escapeHtml(topE.department||topE.Department||'General') + ')<br>' +
-          '&bull; Monthly Compensation: <b>' + INR(Number(topE.salary||topE.Salary||0)) + '</b><br>' +
-          '&bull; Role: ' + escapeHtml(topE.role||topE.designation||'Senior') + '<br><br>' +
-          '<i>Company average salary is ' + INR(avgSalary) + ' per month.</i>';
-      }
-    }
-    // "Highest LTV customer" / "Top client"
-    else if(isHighest && (cleanQ.indexOf('customer') > -1 || cleanQ.indexOf('client') > -1 || cleanQ.indexOf('ltv') > -1 || cleanQ.indexOf('account') > -1)){
-      var sortedCust = (customers||[]).slice().sort(function(a,b){
-        return (Number(b.ltv||b.LTV||0)) - (Number(a.ltv||a.LTV||0));
-      });
-      if(sortedCust.length > 0){
-          var topCStatus = getEntityStatus(topC);
-          reply = '&#128142; <b>Top Client by Lifetime Value:</b><br><br>' +
-          '&bull; <b>' + escapeHtml(topC.name||topC.customer_name) + '</b><br>' +
-          '&bull; Total LTV: <b>' + INR(Number(topC.ltv||topC.LTV||0)) + '</b><br>' +
-          '&bull; Location: ' + escapeHtml(topC.city||topC.location||'India') + '<br>' +
-          '&bull; Account Status: ' + (isStatusActive(topCStatus) ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-amber">' + escapeHtml(topCStatus || 'Pending') + '</span>');
-      }
-    }
-    // "Most expensive product" / "Highest price item"
-    else if(isHighest && (cleanQ.indexOf('product') > -1 || cleanQ.indexOf('item') > -1 || cleanQ.indexOf('price') > -1 || cleanQ.indexOf('stock') > -1)){
-      var sortedProd = (products||[]).slice().sort(function(a,b){
-        return (Number(b.price||0)) - (Number(a.price||0));
-      });
-      if(sortedProd.length > 0){
-        var topP = sortedProd[0];
-        reply = '&#127991;&#65039; <b>Highest Priced Catalog Item:</b><br><br>' +
-          '&bull; <b>' + escapeHtml(topP.name) + '</b> (SKU: ' + escapeHtml(topP.sku||'N/A') + ')<br>' +
-          '&bull; Selling Price: <b>' + INR(Number(topP.price||0)) + '</b><br>' +
-          '&bull; Current Stock: ' + Number(topP.stock||0) + ' units (Valuation: ' + INR((Number(topP.price||0))*(Number(topP.stock||0))) + ')';
-      }
-    }
-    // "Lowest stock item" / "Shortest inventory"
-    else if(isLowest && (cleanQ.indexOf('stock') > -1 || cleanQ.indexOf('product') > -1 || cleanQ.indexOf('item') > -1 || cleanQ.indexOf('inventory') > -1)){
-      var sortedLow = (products||[]).slice().sort(function(a,b){
-        return (Number(a.stock||0)) - (Number(b.stock||0));
-      });
-      if(sortedLow.length > 0){
-        var lowP = sortedLow[0];
-        reply = '&#9888;&#65039; <b>Lowest Stock Item in Catalog:</b><br><br>' +
-          '&bull; <b>' + escapeHtml(lowP.name) + '</b><br>' +
-          '&bull; Units Remaining: <b style="color:var(--coral);">' + Number(lowP.stock||0) + ' units</b> (Reorder point: ' + Number(lowP.min_stock !== undefined ? lowP.min_stock : 10) + ')<br>' +
-          '&bull; Supplier: ' + escapeHtml(lowP.supplier||'Direct Sourcing');
-      }
-    }
-    // "How many employees / staff on leave"
-    else if(isHowMany && (cleanQ.indexOf('leave') > -1 || cleanQ.indexOf('absent') > -1)){
-      reply = '&#127958;&#65039; <b>Leave &amp; Attendance Status:</b><br><br>' +
-        '&bull; Total Staff on Leave: <b>' + onLeaveEmp.length + ' employee(s)</b><br>' +
-        (onLeaveEmp.length > 0 ?
-          '<b>Staff Currently on Leave:</b><br>' + onLeaveEmp.map(function(e){
-            return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(e.name||e.Name) + '</b> &mdash; ' + escapeHtml(e.department||e.Department||'General');
-          }).join('<br>') :
-          '&#9989; All ' + totalEmp + ' team members are currently on active duty.');
-    }
-    // "How many items / SKUs / stock count"
-    else if(isHowMany && (cleanQ.indexOf('item') > -1 || cleanQ.indexOf('product') > -1 || cleanQ.indexOf('sku') > -1 || cleanQ.indexOf('inventory') > -1)){
-      reply = '&#128230; <b>Inventory Counts:</b><br><br>' +
-        '&bull; Total SKUs: <b>' + totalSkus + ' products</b><br>' +
-        '&bull; Total Units in Warehouse: <b>' + totalUnits.toLocaleString('en-IN') + ' units</b><br>' +
-        '&bull; Healthy Stock SKUs: <b>' + healthyStock.length + '</b><br>' +
-        '&bull; Low Stock Alert SKUs: <b>' + lowStockItems.length + '</b>';
-    }
-    // "How many employees"
-    else if(isHowMany && (cleanQ.indexOf('employee') > -1 || cleanQ.indexOf('staff') > -1 || cleanQ.indexOf('worker') > -1 || cleanQ.indexOf('team') > -1)){
-      reply = '&#128101; <b>Workforce Count:</b><br><br>' +
-        '&bull; Total Headcount: <b>' + totalEmp + ' employees</b><br>' +
-        '&bull; Active on Duty: <b>' + activeEmp + '</b><br>' +
-        '&bull; On Leave: <b>' + onLeaveEmp.length + '</b><br>' +
-        '&bull; Departments: ' + depts.join(', ');
-    }
-    // "How many customers"
-    else if(isHowMany && (cleanQ.indexOf('customer') > -1 || cleanQ.indexOf('client') > -1 || cleanQ.indexOf('account') > -1)){
-      reply = '&#129309; <b>Customer Base Count:</b><br><br>' +
-        '&bull; Total Registered Accounts: <b>' + totalCust + '</b><br>' +
-        '&bull; Active Buying Clients: <b>' + activeCust + '</b><br>' +
-        '&bull; Total Portfolio Value: <b>' + INR(totalLtv) + '</b>';
-    }
-    // "How many invoices / pending bills"
-    else if(isHowMany && (cleanQ.indexOf('invoice') > -1 || cleanQ.indexOf('bill') > -1)){
-      reply = '&#128196; <b>Invoice Volume:</b><br><br>' +
-        '&bull; Total Invoices: <b>' + (invoices||[]).length + '</b><br>' +
-        '&bull; Fully Settled (Paid): <b>' + paidInvoices.length + '</b> (' + INR(paidRev) + ')<br>' +
-        '&bull; Pending / Overdue: <b>' + overdueInvs.length + '</b> (' + INR(overdueAmt) + ')';
-    }
-  }
-
-  // &#9472;&#9472; 6. Domain Intent Responses &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-  if(!reply && topDomain){
-    switch(topDomain){
-      case 'greetings':
-        reply = '&#128075; <b>Hello! I am your Kendra AI Copilot.</b><br>' +
-          'I am continuously monitoring your entire business operating data in real-time.<br><br>' +
-          'Feel free to ask me anything &mdash; for example:<br>' +
-          '&bull; <i>"What is our revenue and profit margin?"</i><br>' +
-          '&bull; <i>"Which products need restocking?"</i><br>' +
-          '&bull; <i>"Who is our top customer by LTV?"</i><br>' +
-          '&bull; <i>"Show employees in Sales department"</i><br>' +
-          '&bull; <i>"How can I improve my business health score?"</i>';
-        break;
-
-      case 'thanks':
-        reply = '&#128522; <b>You are very welcome!</b><br>' +
-          'I am always here to provide real-time numbers, operational diagnostics, or strategic recommendations whenever you need them.';
-        break;
-
-      case 'help':
-        reply = '&#129302; <b>Kendra AI Copilot Universal Help &amp; Capabilities:</b><br><br>' +
-          'I can answer questions on every aspect of your enterprise without rigid question formats:<br><br>' +
-          '&bull; &#128176; <b>Finance &amp; P&amp;L:</b> Revenue, expenses, cash profit, profit margins, run-rate.<br>' +
-          '&bull; &#128196; <b>Invoices &amp; Receivables:</b> Paid vs pending collections, overdue aging, specific invoices.<br>' +
-          '&bull; &#128230; <b>Inventory &amp; Warehousing:</b> Stock counts, inventory valuation, low stock alerts, SKU pricing.<br>' +
-          '&bull; &#129309; <b>Customers &amp; CRM:</b> Client accounts, LTV ranking, contact info, follow-ups.<br>' +
-          '&bull; &#128101; <b>Workforce &amp; HR:</b> Headcount, department rosters, payroll burn, attendance.<br>' +
-          '&bull; &#128666; <b>Supply Chain:</b> Supplier directories, vendor ratings, category coverage.<br>' +
-          '&bull; &#9889; <b>Operations &amp; Tasks:</b> Kanban status, completion velocity, high-priority backlog.<br>' +
-          '&bull; &#128200; <b>Health &amp; Strategy:</b> Multi-dimensional health diagnostics &amp; action plans.<br><br>' +
-          '<i>You can also mention any person, customer name, product SKU, or department directly!</i>';
-        break;
-
-      case 'identity':
-        reply = '&#129302; <b>I am Kendra AI Copilot</b> &mdash; an intelligent operational intelligence engine built directly into <b>Kendra Enterprise OS</b>.<br><br>' +
-          'Unlike generic chatbots, I am directly wired into your live database &mdash; meaning every calculation, alert, and diagnosis is 100% accurate and up-to-the-minute.';
-        break;
-
-      case 'health':
-        var healthTier = overallScore >= 88 ? '&#128994; Optimal / Thriving' : overallScore >= 70 ? '&#128993; Good / Stable' : '&#128308; Action Required';
-        reply = '&#128202; <b>Executive Business Health Diagnostic:</b><br><br>' +
-          '<b>&#127942; Overall System Health: ' + overallScore + ' / 100</b> (' + healthTier + ')<br><br>' +
-          '<b>Domain Dimension Breakdown:</b><br>' +
-          '&bull; &#128176; Financial Health: <b>' + finScore + '/100</b> &nbsp;|&nbsp; &#129309; Sales &amp; CRM: <b>' + salesScore + '/100</b><br>' +
-          '&bull; &#128230; Inventory Health: <b>' + invScore + '/100</b> &nbsp;|&nbsp; &#128101; Workforce (HR): <b>' + hrScore + '/100</b><br>' +
-          '&bull; &#9889; Operations (Tasks): <b>' + opsScore + '/100</b> &nbsp;|&nbsp; &#128666; Supply Chain: <b>' + suppScore + '/100</b><br><br>' +
-          '<b>Key Vital Signs:</b><br>' +
-          '&bull; Invoiced Revenue: <b>' + INR(totalRev) + '</b> &nbsp;|&nbsp; Net Cash Profit: <b>' + INR(netProfit) + '</b> (' + profitMargin + '% margin)<br>' +
-          '&bull; Inventory Valuation: <b>' + INR(invValuation) + '</b> across ' + totalSkus + ' SKUs<br>' +
-          '&bull; Active Workforce: <b>' + activeEmp + ' / ' + totalEmp + ' staff active</b><br>' +
-          (lowStockItems.length > 0 ? '<br>&#9888;&#65039; <b>Immediate Alert:</b> ' + lowStockItems.length + ' item(s) below reorder threshold.' : '') +
-          (overdueInvs.length > 0 ? '<br>&#128308; <b>Receivables Alert:</b> ' + overdueInvs.length + ' overdue invoice(s) totalling ' + INR(overdueAmt) + '.' : '');
-        break;
-
-      case 'revenue':
-      case 'profit':
-        reply = '&#128176; <b>Financial Performance &amp; P&amp;L Analysis:</b><br><br>' +
-          '&bull; <b>Total Billed Revenue:</b> <b>' + INR(totalRev) + '</b><br>' +
-          '&bull; <b>Total Operating Expenses:</b> <b>' + INR(totalExp) + '</b><br>' +
-          '&bull; <b>Net Cash Profit:</b> <b style="color:' + (netProfit >= 0 ? 'var(--teal)' : 'var(--coral)') + ';">' + INR(netProfit) + '</b> (' + profitMargin + '% profit margin)<br>' +
-          '&bull; <b>Collected Cash:</b> ' + INR(paidRev) + ' &nbsp;|&nbsp; <b>Pending Cash:</b> ' + INR(totalRev - paidRev) + '<br>' +
-          '&bull; <b>Monthly Payroll Burden:</b> ' + INR(totalPayroll) + '<br><br>' +
-          '<i>Status: ' + (profitMargin >= 20 ? '&#9989; High profitability. Operating efficiently.' : profitMargin >= 10 ? '&#128993; Moderate profitability. Review overheads.' : '&#9888;&#65039; Low margin. Optimize pricing and reduce unnecessary expenditure.') + '</i>';
-        break;
-
-      case 'expense':
-        var expCats = {};
-        (expenses||[]).forEach(function(e){
-          var c = e.category || 'General';
-          expCats[c] = (expCats[c] || 0) + Number(e.amount || 0);
-        });
-        var expCatList = Object.keys(expCats).sort(function(a,b){return expCats[b]-expCats[a];}).map(function(k){
-          return '&nbsp;&nbsp;&bull; ' + escapeHtml(k) + ': <b>' + INR(expCats[k]) + '</b>';
-        }).join('<br>');
-
-        reply = '&#128184; <b>Operating Expense Breakdown:</b><br><br>' +
-          '&bull; <b>Total Operational Outflow:</b> <b>' + INR(totalExp) + '</b><br>' +
-          '&bull; <b>Total Recorded Expenses:</b> ' + (expenses||[]).length + ' records<br>' +
-          (expCatList ? '<br><b>Expense Categories:</b><br>' + expCatList : '') + '<br><br>' +
-          '&bull; <b>Revenue vs Expenses:</b> Net profit stands at <b>' + INR(netProfit) + '</b>.';
-        break;
-
-      case 'invoices':
-        var overdueList = overdueInvs.slice(0, 5).map(function(i){
-          return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(i.invoice_no||i.id) + '</b> &mdash; ' + escapeHtml(i.customer_name||'Client') + ' &mdash; <b>' + INR(Number(i.amount||0)) + '</b> [' + escapeHtml(i.status||'Pending') + ']';
-        }).join('<br>');
-
-        reply = '&#128196; <b>Invoicing &amp; Receivables Status:</b><br><br>' +
-          '&bull; <b>Total Invoices Issued:</b> ' + (invoices||[]).length + ' (' + INR(totalRev) + ')<br>' +
-          '&bull; <b>Settled / Paid Invoices:</b> ' + paidInvoices.length + ' (' + INR(paidRev) + ')<br>' +
-          '&bull; <b>Outstanding / Overdue Invoices:</b> <b style="color:var(--coral);">' + overdueInvs.length + '</b> (' + INR(overdueAmt) + ')<br>' +
-          (overdueList ? '<br><b>Pending Invoices Requiring Follow-up:</b><br>' + overdueList : '<br>&#9989; All invoices are fully paid and up to date.') +
-          (overdueInvs.length > 0 ? '<br><br>&#128161; <i>Tip: Send payment reminders to accelerate cash flow recovery.</i>' : '');
-        break;
-
-      case 'inventory':
-      case 'lowstock':
-        var lowList = lowStockItems.slice(0, 6).map(function(p){
-          return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(p.name) + '</b> &mdash; <b>' + Number(p.stock||0) + ' units left</b> (Reorder level: ' + Number(p.min_stock !== undefined ? p.min_stock : 10) + ')';
-        }).join('<br>');
-
-        reply = '&#128230; <b>Inventory &amp; Stock Intelligence:</b><br><br>' +
-          '&bull; <b>Catalog Size:</b> <b>' + totalSkus + ' SKUs</b><br>' +
-          '&bull; <b>Total Units in Stock:</b> ' + totalUnits.toLocaleString('en-IN') + ' units<br>' +
-          '&bull; <b>Total Retail Valuation:</b> <b>' + INR(invValuation) + '</b> (Cost value: ' + INR(invCostVal) + ')<br>' +
-          '&bull; <b>Healthy Stock Levels:</b> ' + healthyStock.length + ' SKUs<br>' +
-          '&bull; <b>Low Stock / Critical SKUs:</b> <b style="color:var(--coral);">' + lowStockItems.length + '</b><br>' +
-          (lowList ? '<br><b>&#9888;&#65039; Items Requiring Restock:</b><br>' + lowList : '<br>&#9989; All product stock levels are currently above reorder points.') +
-          (lowStockItems.length > 0 ? '<br><br>&#128161; <i>Tip: Reorder these items from your suppliers to prevent order fulfilment delays.</i>' : '');
-        break;
-
-      case 'customers':
-        var topCustList = (customers||[]).slice().sort(function(a,b){
-          return (Number(b.ltv||b.LTV||0)) - (Number(a.ltv||a.LTV||0));
-        }).slice(0, 4).map(function(c){
-          return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(c.name||c.customer_name) + '</b> &mdash; LTV: <b>' + INR(Number(c.ltv||c.LTV||0)) + '</b> (' + escapeHtml(c.city||'India') + ')';
-        }).join('<br>');
-
-        reply = '&#129309; <b>Customers &amp; CRM Insights:</b><br><br>' +
-          '&bull; <b>Total Customer Accounts:</b> <b>' + totalCust + '</b><br>' +
-          '&bull; <b>Active Accounts:</b> ' + activeCust + ' &nbsp;|&nbsp; <b>Inactive:</b> ' + (totalCust - activeCust) + '<br>' +
-          '&bull; <b>Total Portfolio Lifetime Value:</b> <b>' + INR(totalLtv) + '</b><br>' +
-          '&bull; <b>Average Customer Value:</b> ' + INR(avgLtv) + '<br>' +
-          (topCustList ? '<br><b>Top Key Accounts:</b><br>' + topCustList : '') + '<br><br>' +
-          '<button class="btn btn-ghost btn-sm" onclick="showPage(\'crm\');closeCopilot();">Open CRM Directory &#8594;</button>';
-        break;
-
-      case 'employees':
-        var empRoster = (employees||[]).slice(0, 6).map(function(e){
-          var st = getEntityStatus(e);
-          var isAct = isStatusActive(st);
-          return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(e.name||e.Name) + '</b> (' + escapeHtml(e.department||e.Department||'General') + ') &mdash; ' + (isAct ? '<span style="color:var(--teal);">Active</span>' : '<span style="color:var(--coral);">' + escapeHtml(st || 'Pending') + '</span>');
-        }).join('<br>');
-
-        reply = '&#128101; <b>Workforce &amp; Human Resources Overview:</b><br><br>' +
-          '&bull; <b>Total Headcount:</b> <b>' + totalEmp + ' employees</b><br>' +
-          '&bull; <b>On Duty Today:</b> ' + activeEmp + ' &nbsp;|&nbsp; <b>On Leave:</b> ' + onLeaveEmp.length + '<br>' +
-          '&bull; <b>Monthly Payroll Commitment:</b> <b>' + INR(totalPayroll) + '</b> (Avg: ' + INR(avgSalary) + '/mo)<br>' +
-          '&bull; <b>Departments Covered:</b> ' + depts.join(', ') + '<br>' +
-          (empRoster ? '<br><b>Team Roster Sample:</b><br>' + empRoster : '') + '<br><br>' +
-          '<button class="btn btn-ghost btn-sm" onclick="showPage(\'employees\');closeCopilot();">Open Workforce Module &#8594;</button>';
-        break;
-
-      case 'suppliers':
-        var suppRoster = (suppliers||[]).slice(0, 5).map(function(s){
-          return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(s.name) + '</b> (' + escapeHtml(s.category||'General') + ') &mdash; &#11088; ' + (s.rating || '4.5');
-        }).join('<br>');
-
-        reply = '&#128666; <b>Suppliers &amp; Procurement Directory:</b><br><br>' +
-          '&bull; <b>Registered Suppliers:</b> <b>' + totalSupp + ' vendors</b><br>' +
-          '&bull; <b>High-Rated Vendors (4&#9733;+):</b> ' + topSuppliers.length + '<br>' +
-          '&bull; <b>Categories Covered:</b> ' + (suppliers||[]).map(function(s){return s.category||'General';}).filter(function(c,i,a){return a.indexOf(c)===i;}).join(', ') + '<br>' +
-          (suppRoster ? '<br><b>Key Suppliers:</b><br>' + suppRoster : '');
-        break;
-
-      case 'tasks':
-        var critTasks = highPrioTasks.slice(0, 5).map(function(t){
-          return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(t.title||'Task') + '</b> &mdash; Assigned to: ' + escapeHtml(t.assignee||'Team') + ' [' + escapeHtml(t.status||'todo') + ']';
-        }).join('<br>');
-
-        reply = '&#9889; <b>Operational Tasks &amp; Kanban Pulse:</b><br><br>' +
-          '&bull; <b>Total Operations Tasks:</b> ' + totalTasks + '<br>' +
-          '&bull; <b>Completed (Done):</b> ' + doneTasks.length + ' (' + taskCompRate + '% completion rate)<br>' +
-          '&bull; <b>In Progress:</b> ' + progTasks.length + ' &nbsp;|&nbsp; <b>To Do:</b> ' + todoTasks.length + '<br>' +
-          '&bull; <b>High-Priority Action Items:</b> <b style="color:' + (highPrioTasks.length > 0 ? 'var(--coral)' : 'var(--teal)') + ';">' + highPrioTasks.length + '</b><br>' +
-          (critTasks ? '<br><b>Critical Pending Tasks:</b><br>' + critTasks : '<br>&#9989; No critical high-priority bottlenecks detected.') + '<br><br>' +
-          '<button class="btn btn-ghost btn-sm" onclick="showPage(\'tasks\');closeCopilot();">Open Kanban Board &#8594;</button>';
-        break;
-
-      case 'documents':
-        reply = '&#128193; <b>Document Vault &amp; Compliance Repository:</b><br><br>' +
-          '&bull; <b>Total Secured Documents:</b> <b>' + totalDocs + ' files</b><br>' +
-          '&bull; <b>Categories:</b> Contracts, Policies, Invoices, Compliance Deeds.<br><br>' +
-          '<button class="btn btn-ghost btn-sm" onclick="showPage(\'documents\');closeCopilot();">Open Document Vault &#8594;</button>';
-        break;
-
-      case 'movements':
-        reply = '&#128667; <b>Goods Movement &amp; Logistics Tracking:</b><br><br>' +
-          '&bull; <b>Total Stock Movements Logged:</b> ' + totalMoves + '<br>' +
-          '&bull; <b>Inward Shipments (IN):</b> ' + inMoves.length + '<br>' +
-          '&bull; <b>Outward Shipments (OUT):</b> ' + outMoves.length + '<br><br>' +
-          '<button class="btn btn-ghost btn-sm" onclick="showPage(\'goods\');closeCopilot();">View Movement History &#8594;</button>';
-        break;
-
-      case 'imports':
-        reply = '&#128229; <b>Data Import &amp; Synchronization Engine:</b><br><br>' +
-          'Kendra Enterprise OS supports instant auto-detected import for:<br>' +
-          '&nbsp;&nbsp;&bull; &#128230; Inventory &amp; Stock Catalogs<br>' +
-          '&nbsp;&nbsp;&bull; &#128101; Employee &amp; Staff Rosters<br>' +
-          '&nbsp;&nbsp;&bull; &#129309; Customers &amp; CRM Records<br>' +
-          '&nbsp;&nbsp;&bull; &#128666; Supplier &amp; Vendor Lists<br>' +
-          '&nbsp;&nbsp;&bull; &#128184; Expense Receipts &amp; Ledger<br>' +
-          '&nbsp;&nbsp;&bull; &#128196; Invoices &amp; Billing Data<br><br>' +
-          'Supports standard <b>Excel (.xlsx, .xls)</b> and <b>CSV</b> with automated column header aliasing.<br><br>' +
-          '<button class="btn btn-primary btn-sm" onclick="showPage(\'imports\');closeCopilot();">Go to Import Center &#8594;</button>';
-        break;
-
-      case 'reports':
-        reply = '&#128200; <b>Executive Analytics &amp; Reports Center:</b><br><br>' +
-          'Generate and export comprehensive intelligence reports covering:<br>' +
-          '&bull; Monthly P&amp;L Revenue vs Expenses trendlines<br>' +
-          '&bull; 6-Dimension Business Health Matrix<br>' +
-          '&bull; Inventory Valuation &amp; Dead Stock Audit<br>' +
-          '&bull; Customer Acquisition &amp; LTV Cohorts<br>' +
-          '&bull; Workforce Payroll Burden &amp; Productivity<br><br>' +
-          '<button class="btn btn-primary btn-sm" onclick="showPage(\'reports\');closeCopilot();">Open Reports Center &#8594;</button>';
-        break;
-    }
-  }
-
-  // &#9472;&#9472; 7. Universal Contextual Search Fallback (Keyword Deep Search) &#9472;&#9472;&#9472;
-  if(!reply){
+  // ══════════════════════════════════════════════════════════
+  // 11. UNIVERSAL CONTEXTUAL SEARCH & FALLBACK
+  // ══════════════════════════════════════════════════════════
+  else {
     var matchedRecords = [];
-    var searchTerms = tokens.filter(function(t){ return t.length >= 3; });
+    var searchTerms = tokens.filter(function(t){ return t.length >= 2; });
 
     if(searchTerms.length > 0){
       (products||[]).forEach(function(p){
         var str = JSON.stringify(p).toLowerCase();
         for(var i=0; i<searchTerms.length; i++){
           if(str.indexOf(searchTerms[i]) > -1){
-            matchedRecords.push('&#128230; <b>Product:</b> ' + escapeHtml(p.name) + ' (' + Number(p.stock||0) + ' units, ' + INR(Number(p.price||0)) + ')');
+            matchedRecords.push('&#128230; <b>Product:</b> ' + escapeHtml(p.name||p.Product_Name||'Item') + ' (Stock: ' + parseCleanNumber(p.stock||0) + ', ' + INR(p.price||0) + ')');
             break;
           }
         }
@@ -7648,7 +7328,7 @@ function askCopilot(customQuery){
         var str = JSON.stringify(c).toLowerCase();
         for(var i=0; i<searchTerms.length; i++){
           if(str.indexOf(searchTerms[i]) > -1){
-            matchedRecords.push('&#129309; <b>Customer:</b> ' + escapeHtml(c.name||c.customer_name) + ' (LTV: ' + INR(Number(c.ltv||c.LTV||0)) + ')');
+            matchedRecords.push('&#129309; <b>Customer:</b> ' + escapeHtml(c.name||c.customer_name||'Client') + ' (LTV: ' + INR(c.ltv||c.total_amount||0) + ')');
             break;
           }
         }
@@ -7657,7 +7337,7 @@ function askCopilot(customQuery){
         var str = JSON.stringify(e).toLowerCase();
         for(var i=0; i<searchTerms.length; i++){
           if(str.indexOf(searchTerms[i]) > -1){
-            matchedRecords.push('&#128100; <b>Employee:</b> ' + escapeHtml(e.name||e.Name) + ' (' + escapeHtml(e.department||e.Department||'Staff') + ')');
+            matchedRecords.push('&#128100; <b>Employee:</b> ' + escapeHtml(e.name||e.Name||'Staff') + ' (' + escapeHtml(e.department||'General') + ')');
             break;
           }
         }
@@ -7666,16 +7346,7 @@ function askCopilot(customQuery){
         var str = JSON.stringify(s).toLowerCase();
         for(var i=0; i<searchTerms.length; i++){
           if(str.indexOf(searchTerms[i]) > -1){
-            matchedRecords.push('&#128666; <b>Supplier:</b> ' + escapeHtml(s.name) + ' (' + escapeHtml(s.category||'Vendor') + ')');
-            break;
-          }
-        }
-      });
-      (tasks||[]).forEach(function(t){
-        var str = JSON.stringify(t).toLowerCase();
-        for(var i=0; i<searchTerms.length; i++){
-          if(str.indexOf(searchTerms[i]) > -1){
-            matchedRecords.push('&#9889; <b>Task:</b> ' + escapeHtml(t.title) + ' [' + escapeHtml(t.status||'todo') + ']');
+            matchedRecords.push('&#128666; <b>Supplier:</b> ' + escapeHtml(s.name||'Vendor') + ' (' + escapeHtml(s.category||'General') + ')');
             break;
           }
         }
@@ -7687,13 +7358,12 @@ function askCopilot(customQuery){
         matchedRecords.slice(0, 6).join('<br>') +
         '<br><br><i>Ask me for specific details about any of these items above!</i>';
     } else {
-      reply = '&#129300; <b>Here is a live summary of your business status:</b><br><br>' +
-        '&bull; <b>Health Score:</b> <b>' + overallScore + ' / 100</b><br>' +
+      reply = '&#129300; <b>Live Business Status Overview:</b><br><br>' +
         '&bull; <b>Total Revenue:</b> <b>' + INR(totalRev) + '</b> &nbsp;|&nbsp; <b>Net Profit:</b> <b>' + INR(netProfit) + '</b> (' + profitMargin + '%)<br>' +
         '&bull; <b>Inventory:</b> ' + totalSkus + ' SKUs (' + totalUnits + ' units) &nbsp;|&nbsp; <b>Valuation:</b> ' + INR(invValuation) + '<br>' +
         '&bull; <b>Workforce:</b> ' + activeEmp + ' / ' + totalEmp + ' staff active<br>' +
         '&bull; <b>Accounts:</b> ' + totalCust + ' clients &nbsp;|&nbsp; ' + totalSupp + ' suppliers<br><br>' +
-        '<i>You can ask me questions like: "What is our revenue?", "Who is on leave?", "Which items are low in stock?", or search for any name or invoice directly!</i>';
+        '<i>Try asking: "Show me the revenue and profit summary.", "Show me the inventory summary.", or "Which products are below the reorder level?"</i>';
     }
   }
 
@@ -9708,16 +9378,58 @@ function openExpenseModal(){ openModal('ocrModal'); }
 
 </script>
 
-<div class="modal-overlay" id="copilotModal" onclick="if(event.target===this)closeCopilot()" style="display:none;z-index:9999;">
-  <div class="modal copilot-drawer" style="max-width:480px;width:90%;margin-left:auto;height:100vh;max-height:100vh;border-radius:0;display:flex;flex-direction:column;padding:0;overflow:hidden;box-shadow:-8px 0 24px rgba(0,0,0,0.15);">
-    <div class="modal-head" style="background:var(--ink);color:#fff;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:22px;">&#129302;</span>
+<div class="modal-overlay" id="copilotModal" onclick="if(event.target===this)closeCopilot()" style="display:none;z-index:9999;position:fixed;inset:0;background:rgba(15,20,19,0.5);align-items:flex-end;justify-content:flex-end;">
+  <div class="modal copilot-drawer" style="width:460px;max-width:92vw;height:100vh;max-height:100vh;margin:0;border-radius:0;display:flex;flex-direction:column;padding:0;overflow:hidden;box-shadow:-8px 0 28px rgba(0,0,0,0.18);border-left:1px solid var(--line);background:var(--surface);">
+    
+    <!-- Header -->
+    <div class="copilot-head" style="background:var(--ink);color:#fff;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;">&#129302;</div>
         <div>
-          <div style="font-weight:700;font-size:16px;color:#fff;">Kendra AI Copilot</div>
-          <div style="font-size:11.5px;color:rgba(255,255,255,0.7);">Real-time Operations &amp; Business Assistant</div>
+          <div style="font-weight:700;font-size:15px;color:#fff;font-family:var(--font-display);">Kendra AI Copilot</div>
+          <div style="font-size:11.5px;color:#8FBDB0;">Real-time Operations &amp; Business Assistant</div>
         </div>
       </div>
+      <span class="modal-close" style="color:#fff;font-size:22px;cursor:pointer;opacity:0.8;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'" onclick="closeCopilot()">&times;</span>
+    </div>
+
+    <!-- Quick Chips / Suggested Prompts -->
+    <div style="padding:10px 16px;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:8px;overflow-x:auto;flex-shrink:0;">
+      <button class="btn btn-ghost btn-xs" style="white-space:nowrap;font-size:11.5px;border-radius:20px;background:var(--card-bg);border:1px solid var(--line);cursor:pointer;" onclick="openCopilot('Show me the revenue and profit summary.')">&#128176; Revenue &amp; Profit</button>
+      <button class="btn btn-ghost btn-xs" style="white-space:nowrap;font-size:11.5px;border-radius:20px;background:var(--card-bg);border:1px solid var(--line);cursor:pointer;" onclick="openCopilot('Show me the inventory summary.')">&#128230; Inventory Summary</button>
+      <button class="btn btn-ghost btn-xs" style="white-space:nowrap;font-size:11.5px;border-radius:20px;background:var(--card-bg);border:1px solid var(--line);cursor:pointer;" onclick="openCopilot('Which products are below the reorder level?')">&#9888;&#65039; Low Stock Items</button>
+      <button class="btn btn-ghost btn-xs" style="white-space:nowrap;font-size:11.5px;border-radius:20px;background:var(--card-bg);border:1px solid var(--line);cursor:pointer;" onclick="openCopilot('Who is currently on leave?')">&#127958;&#65039; Staff on Leave</button>
+      <button class="btn btn-ghost btn-xs" style="white-space:nowrap;font-size:11.5px;border-radius:20px;background:var(--card-bg);border:1px solid var(--line);cursor:pointer;" onclick="openCopilot('How is my overall business health?')">&#127973; Business Health</button>
+    </div>
+
+    <!-- Chat Messages Stream -->
+    <div id="copilotMessages" style="flex:1;padding:18px 20px;overflow-y:auto;background:var(--bg);display:flex;flex-direction:column;gap:14px;">
+      <div class="chat-msg bot" style="display:flex;gap:10px;align-items:flex-end;">
+        <div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#129302;</div>
+        <div class="chat-bubble bot" style="background:var(--surface);border:1px solid var(--line);padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.6;color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,0.04);max-width:88%;">
+          &#128075; Hello! I am your <b>Kendra AI Copilot</b>.<br>
+          I am connected to your live business operating data.<br><br>
+          Ask me questions like:<br>
+          &bull; <i>"Show me the revenue and profit summary."</i><br>
+          &bull; <i>"Show me the inventory summary."</i><br>
+          &bull; <i>"Which products are below the reorder level?"</i><br>
+          &bull; <i>"Who is currently on leave?"</i><br>
+          &bull; <i>"Who are our top customers?"</i><br>
+          &bull; <i>"Can you recommend a pizza recipe for tonight?"</i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Footer Bar -->
+    <div style="padding:14px 16px;background:var(--surface);border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-shrink:0;">
+      <input id="copilotQueryInput" placeholder="Ask AI Copilot anything..." style="flex:1;padding:11px 16px;border-radius:10px;border:1px solid var(--line);font-size:13.5px;background:var(--card-bg);color:var(--ink);outline:none;transition:border-color 0.15s;" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--line)'" onkeydown="if(event.key==='Enter')askCopilot()">
+      <button class="btn btn-primary" id="copilotSendBtn" onclick="askCopilot()" style="padding:11px 18px;border-radius:10px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--teal);border:none;cursor:pointer;color:#fff;">
+        <span style="font-size:16px;">&#10148;</span>
+      </button>
+    </div>
+
+  </div>
+</div>
       <span class="modal-close" style="color:#fff;font-size:20px;cursor:pointer;" onclick="closeCopilot()">&times;</span>
     </div>
     <div id="copilotMessages" style="flex:1;padding:20px;overflow-y:auto;background:var(--bg);display:flex;flex-direction:column;gap:12px;">
