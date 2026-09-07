@@ -4389,9 +4389,18 @@ function formatColumnHeader(str){
     .trim();
 }
 
+function parseCleanNumber(val, defaultVal = 0){
+  if(val === undefined || val === null || val === '') return defaultVal;
+  if(typeof val === 'number') return isNaN(val) ? defaultVal : val;
+  const str = String(val).trim();
+  if(!str || str === '-' || str === 'N/A' || str === 'None' || str === 'null' || str === 'undefined') return defaultVal;
+  const clean = str.replace(/[^0-9.-]/g, '');
+  const num = parseFloat(clean);
+  return isNaN(num) ? defaultVal : num;
+}
+
 function INR(n){
-  const num = Number(n);
-  if(isNaN(num)) return '\u20B90';
+  const num = parseCleanNumber(n, 0);
   return '\u20B9' + num.toLocaleString('en-IN');
 }
 
@@ -5039,17 +5048,24 @@ function getEntityDataset(entityName){
   if(entityName === 'customers') return customers;
   if(entityName === 'employees') return employees;
   if(entityName === 'products') return products;
-  if(entityName === 'goodsMovements') return goodsMovements;
+  if(entityName === 'invoices') return invoices;
+  if(entityName === 'expenses') return expenses;
+  if(entityName === 'tasks') return tasks;
+  if(entityName === 'documents') return documents;
+  if(entityName === 'goodsMovements' || entityName === 'goods') return goodsMovements;
   if(typeof window !== 'undefined' && window[entityName]) return window[entityName];
   return [];
 }
-
 function setEntityDataset(entityName, data){
   if(entityName === 'suppliers') suppliers = data;
   else if(entityName === 'customers') customers = data;
   else if(entityName === 'employees') employees = data;
   else if(entityName === 'products') products = data;
-  else if(entityName === 'goodsMovements') goodsMovements = data;
+  else if(entityName === 'invoices') invoices = data;
+  else if(entityName === 'expenses') expenses = data;
+  else if(entityName === 'tasks') tasks = data;
+  else if(entityName === 'documents') documents = data;
+  else if(entityName === 'goodsMovements' || entityName === 'goods') goodsMovements = data;
   if(typeof window !== 'undefined') window[entityName] = data;
 }
 
@@ -7408,67 +7424,104 @@ function filterDashChart(range, btn){
 }
 
 function getAggregatedBusinessMetrics(){
-  // 1. Invoices & Sales / Customer Revenue
-  const invRev = (invoices || []).reduce((s, i) => s + (Number(i.amount || i.total_amount || 0) || 0), 0);
-  const custRev = (customers || []).reduce((s, c) => s + (Number(c.total_amount || c['TOTAL AMOUNT'] || c['Total Amount'] || c.total_purchase_value || c.ltv || c.LTV || c['Lifetime Value'] || c.total_purchases || 0) || 0), 0);
-  const totalRev = invRev > 0 ? invRev : custRev;
+  // 1. REVENUE (Invoices + Customer Lifetime Sales / Purchase Value)
+  const invRev = (invoices || []).reduce((s, i) => {
+    return s + parseCleanNumber(i.amount || i.total_amount || i.Total_Amount || i['TOTAL AMOUNT'] || i['Total Amount'] || i['TOTAL_AMOUNT'] || i.grand_total || i.net_amount || (i.price && i.quantity ? Number(i.price) * Number(i.quantity) : 0));
+  }, 0);
 
-  // 2. Expenses, Supplier Payables & Employee Payroll
-  const expAmt = (expenses || []).reduce((s, e) => s + (Number(e.amount || 0) || 0), 0);
-  const suppPayables = (suppliers || []).reduce((s, sup) => s + (Number(sup.total_purchase_value || sup['TOTAL PURCHASE VALUE'] || sup['Total Purchase Value'] || sup.payables || sup.total_amount || 0) || 0), 0);
-  const empPayroll = (employees || []).reduce((s, e) => s + (Number(e.salary || e.Salary || e['Monthly Salary'] || e['MONTHLY SALARY'] || 0) || 0), 0);
-  const totalExp = expAmt > 0 ? expAmt : (suppPayables + empPayroll);
+  const custRev = (customers || []).reduce((s, c) => {
+    return s + parseCleanNumber(c.total_amount || c.Total_Amount || c['TOTAL AMOUNT'] || c['Total Amount'] || c['TOTAL_AMOUNT'] || c.total_purchase_value || c.Total_Purchase_Value || c['TOTAL PURCHASE VALUE'] || c['Total Purchase Value'] || c.ltv || c.LTV || c['Lifetime Value'] || c['LIFETIME VALUE'] || c.total_purchases || c.Total_Purchases || c['TOTAL PURCHASES'] || c.spend || c.Total_Spend || c.revenue || c.sales || c.amount);
+  }, 0);
 
+  const totalRev = (invRev > 0 && invRev >= custRev) ? invRev : (custRev > 0 ? custRev : invRev);
+
+  // 2. EXPENDITURE / EXPENSES (Logged Expenses + Supplier Payables/Procurement + Staff Payroll)
+  const expAmt = (expenses || []).reduce((s, e) => {
+    return s + parseCleanNumber(e.amount || e.Amount || e.total_amount || e.Total_Amount || e['TOTAL AMOUNT'] || e['Total Amount'] || e.expense_amount || e.cost);
+  }, 0);
+
+  const suppPayables = (suppliers || []).reduce((s, sup) => {
+    return s + parseCleanNumber(sup.total_purchase_value || sup.Total_Purchase_Value || sup['TOTAL PURCHASE VALUE'] || sup['Total Purchase Value'] || sup['TOTAL_PURCHASE_VALUE'] || sup.total_amount || sup.Total_Amount || sup['TOTAL AMOUNT'] || sup['Total Amount'] || sup['TOTAL_AMOUNT'] || sup.payables || sup.Payables || sup['PAYABLES'] || sup.balance || sup.Balance || sup.purchase_amount || sup.spend || sup.amount);
+  }, 0);
+
+  const empPayroll = (employees || []).reduce((s, e) => {
+    return s + parseCleanNumber(e.salary || e.Salary || e['SALARY'] || e.monthly_salary || e.Monthly_Salary || e['Monthly Salary'] || e['MONTHLY SALARY'] || e.basic_salary || e['Basic Salary'] || e.wage || e.gross_salary || e.pay);
+  }, 0);
+
+  // Comprehensive Total Expenditure
+  let totalExp = 0;
+  if(expAmt > 0){
+    totalExp = expAmt + suppPayables + empPayroll;
+  } else {
+    totalExp = suppPayables + empPayroll;
+  }
+
+  // 3. NET PROFIT & MARGIN
   const netProfit = totalRev - totalExp;
   const profitMargin = totalRev > 0 ? Math.round((netProfit / totalRev) * 100) : (totalExp > 0 ? -100 : 0);
 
-  // 3. Receivables & Overdue
-  const invReceivables = (invoices || []).filter(i => (i.status||'').toLowerCase() !== 'paid').reduce((s, i) => s + (Number(i.amount || 0) || 0), 0);
-  const custReceivables = (customers || []).reduce((s, c) => s + (Number(c.outstanding_balance || c['OUTSTANDING BALANCE'] || c['Outstanding Balance'] || c.outstanding || c.balance || c.due_amount || 0) || 0), 0);
+  // 4. RECEIVABLES & OVERDUE AMOUNTS
+  const invReceivables = (invoices || []).filter(i => (i.status || '').toLowerCase() !== 'paid').reduce((s, i) => {
+    return s + parseCleanNumber(i.amount || i.total_amount || i.Total_Amount || i['TOTAL AMOUNT'] || i['Total Amount']);
+  }, 0);
+
+  const custReceivables = (customers || []).reduce((s, c) => {
+    return s + parseCleanNumber(c.outstanding_balance || c.Outstanding_Balance || c['OUTSTANDING BALANCE'] || c['Outstanding Balance'] || c.outstanding || c.balance || c.due_amount || c['DUE AMOUNT']);
+  }, 0);
+
   const receivables = invReceivables > 0 ? invReceivables : custReceivables;
 
-  const overdueInv = (invoices || []).filter(i => ['overdue', 'pending'].includes((i.status || '').toLowerCase()));
-  const overdueAmt = overdueInv.reduce((s, i) => s + (Number(i.amount || 0) || 0), 0);
+  const overdueInv = (invoices || []).filter(i => ['overdue', 'pending', 'due', 'unpaid'].includes((i.status || '').toLowerCase()));
+  const overdueAmt = overdueInv.reduce((s, i) => {
+    return s + parseCleanNumber(i.amount || i.total_amount || i.Total_Amount || i['TOTAL AMOUNT']);
+  }, 0);
 
-  // 4. Inventory & Stock
+  // 5. INVENTORY & STOCK
   const totalProds = (products || []).length;
   const lowStockItems = (products || []).filter(p => {
-    const st = Number(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
-    const min = Number(p.min_stock !== undefined ? p.min_stock : (p['MIN_STOCK'] ?? p['Min Stock'] ?? p['Reorder Level'] ?? 10));
+    const st = parseCleanNumber(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
+    const min = parseCleanNumber(p.min_stock !== undefined ? p.min_stock : (p['MIN_STOCK'] ?? p['Min Stock'] ?? p['Reorder Level'] ?? 10));
     return st <= min;
   });
   const lowStockCount = lowStockItems.length;
+
   const invValuation = (products || []).reduce((s, p) => {
-    const explicitVal = Number(p.stock_value || p['STOCK VALUE'] || p['Stock Value'] || 0);
+    const explicitVal = parseCleanNumber(p.stock_value || p['STOCK VALUE'] || p['Stock Value']);
     if(explicitVal > 0) return s + explicitVal;
-    const price = Number(p.price !== undefined ? p.price : (p.selling_price || p.unit_price || p.cost || 0));
-    const stock = Number(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
+    const price = parseCleanNumber(p.price !== undefined ? p.price : (p.selling_price || p.unit_price || p.cost || 0));
+    const stock = parseCleanNumber(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
     return s + (price * stock);
   }, 0);
-  const totalUnits = (products || []).reduce((s, p) => s + Number(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0)), 0);
 
-  // 5. CRM & Customers
+  const totalUnits = (products || []).reduce((s, p) => {
+    return s + parseCleanNumber(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
+  }, 0);
+
+  // 6. CRM & CUSTOMERS
   const totalCust = (customers || []).length;
   const totalLtv = custRev;
   const avgLtv = totalCust > 0 ? Math.round(totalLtv / totalCust) : 0;
   const activeClients = (customers || []).filter(c => (c.status || c.STATUS || 'Active').toLowerCase() === 'active').length;
   const retentionRate = totalCust > 0 ? Math.round((activeClients / totalCust) * 100) : (totalCust === 0 ? 100 : 0);
 
-  // 6. Workforce & HR
+  // 7. WORKFORCE & HR
   const totalEmp = (employees || []).length;
   const activeEmp = (employees || []).filter(e => (e.status || 'Active').toLowerCase() === 'active').length;
-  const avgAtt = employees.length ? Math.round(employees.reduce((s, e) => s + Number(e.attendance_pct || e.Attendance || e['ATTENDANCE'] || 95), 0) / employees.length) : (totalEmp > 0 ? 95 : 0);
+  const avgAtt = employees.length ? Math.round(employees.reduce((s, e) => {
+    return s + parseCleanNumber(e.attendance_pct || e.Attendance || e['ATTENDANCE'] || 95);
+  }, 0) / employees.length) : (totalEmp > 0 ? 95 : 0);
   const empAttRate = avgAtt;
-  const totalPayrollVal = empPayroll;
   const deptSet = new Set((employees || []).map(e => e.department || e.Department || e['DEPARTMENT'] || 'General'));
 
-  // 7. Suppliers & Procurement
+  // 8. SUPPLIERS & PROCUREMENT
   const totalSupp = (suppliers || []).length;
   const highRatedSupp = (suppliers || []).filter(s => parseFloat(String(s.rating || s.Rating || 0)) >= 4).length;
-  const totalOrders = (suppliers || []).reduce((acc, s) => acc + (Number(s.total_orders || s['TOTAL ORDERS'] || s['Total Orders'] || s.orders || 0) || 0), 0);
+  const totalOrders = (suppliers || []).reduce((acc, s) => {
+    return acc + parseCleanNumber(s.total_orders || s['TOTAL ORDERS'] || s['Total Orders'] || s.orders || 0);
+  }, 0);
   const fulfillRate = totalSupp > 0 ? Math.round((highRatedSupp / totalSupp) * 100) : 100;
 
-  // 8. Tasks & Operations
+  // 9. TASKS & OPERATIONS
   const totalTasks = (tasks || []).length;
   const doneTasks = (tasks || []).filter(t => (t.status || '').toLowerCase() === 'done').length;
   const pendingTasks = (tasks || []).filter(t => (t.status || '').toLowerCase() !== 'done').length;
@@ -7477,11 +7530,12 @@ function getAggregatedBusinessMetrics(){
 
   return {
     totalRev, totalExp, netProfit, profitMargin,
+    expAmt, suppPayables, empPayroll,
     receivables, overdueInv, overdueAmt,
     totalProds, lowStockItems, lowStockCount, invValuation, totalUnits,
     totalCust, totalLtv, avgLtv, activeClients, retentionRate,
-    totalEmp, activeEmp, empAttRate, totalPayroll: totalPayrollVal, deptSet,
-    totalSupp, highRatedSupp, totalOrders, suppPayables, fulfillRate,
+    totalEmp, activeEmp, empAttRate, totalPayroll: empPayroll, deptSet,
+    totalSupp, highRatedSupp, totalOrders, fulfillRate,
     totalTasks, doneTasks, pendingTasks, highPrioTasks, taskCompRate
   };
 }
@@ -7531,6 +7585,10 @@ function computeDashboard(){
   if(el('dashProfitVal'))   el('dashProfitVal').textContent = INR(m.netProfit);
   if(el('dashRecVal'))      el('dashRecVal').textContent = INR(m.receivables);
   if(el('dashLowStockVal')) el('dashLowStockVal').textContent = m.lowStockCount;
+
+  // Update Legend Values at Bottom of Dashboard Chart
+  if(el('dashLegendRev')) el('dashLegendRev').textContent = INR(m.totalRev);
+  if(el('dashLegendExp')) el('dashLegendExp').textContent = INR(m.totalExp);
 
   // Colour profit card based on sign
   const profEl = el('dashProfitVal');
