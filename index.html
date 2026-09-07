@@ -3921,36 +3921,35 @@ function __scheduleEntitySync(entity){
 
 async function __hydrateEntity(entity){
   if(!sb || !currentBusiness?.id) return;
-  const cfg=KENDRA_ENTITY_MAP[entity];
-  const {data,error}=await sb.from(cfg.table).select('*').eq('business_id',currentBusiness.id).order('created_at',{ascending:false});
-  if(error) throw error;
-  const rows=(data||[]).map(r=>__fromDbRow(entity,r)).filter(x=>!isSampleRecord(x));
+  const cfg = KENDRA_ENTITY_MAP[entity];
+  if(!cfg) return;
 
-  // Build a lookup map of existing local records to merge fields
+  // 1. Read existing local records from localStorage first
   const localRaw = __nativeLocalStorage.getItem(cfg.key);
-  let localMap = new Map();
+  let localList = [];
   if(localRaw){
     try{
-      const localList = JSON.parse(localRaw);
-      if(Array.isArray(localList)){
-        localList.filter(x=>!isSampleRecord(x)).forEach(item => {
-          if(!item) return;
-          if(item.id) localMap.set(String(item.id), item);
-          if(item._displayId) localMap.set(String(item._displayId), item);
-          if(item.original_id) localMap.set(String(item.original_id), item);
-          const nameKey = (item.name || item['CUSTOMER NAME'] || item['SUPPLIER NAME'] || item['EMPLOYEE NAME'] || '').trim().toLowerCase();
-          if(nameKey) localMap.set(nameKey, item);
-        });
-      }
+      const parsed = JSON.parse(localRaw);
+      if(Array.isArray(parsed)) localList = parsed.filter(x => !isSampleRecord(x));
     }catch(e){}
   }
 
-  // If Supabase returned 0 rows (e.g. sync failed or table empty), preserve the
-  // existing localStorage cache rather than wiping the in-memory array.
-  if(rows.length === 0){
-    if(localMap.size > 0){
-      const localRows = Array.from(new Set(localMap.values()));
-      __setEntityArray(entity, localRows);
+  // 2. Fetch from Supabase
+  let dbRows = [];
+  try {
+    const {data, error} = await sb.from(cfg.table).select('*').eq('business_id', currentBusiness.id).order('created_at', {ascending: false});
+    if(!error && Array.isArray(data)){
+      dbRows = data.map(r => __fromDbRow(entity, r)).filter(x => !isSampleRecord(x));
+    }
+  } catch(err){
+    console.warn('[Kendra] Supabase fetch failed for', entity, err.message);
+  }
+
+  // 3. If Supabase returned 0 rows or errored, PRESERVE localList completely!
+  if(dbRows.length === 0){
+    if(localList.length > 0){
+      __setEntityArray(entity, localList);
+      __nativeSet(cfg.key, JSON.stringify(localList));
       __scheduleEntitySync(entity);
     } else {
       __setEntityArray(entity, []);
@@ -3958,13 +3957,24 @@ async function __hydrateEntity(entity){
     return;
   }
 
-  // Merge each Supabase row with any matching local record so that any custom/imported
-  // fields (e.g. Vehicle Number, Tyre Size, Age, Gender, Phone) that were not separate
-  // columns in Supabase are NEVER lost or turned into blank '-' on refresh!
-  const finalRows = rows.map(r => {
+  // 4. If Supabase returned rows, merge them with localList
+  const localMap = new Map();
+  localList.forEach(item => {
+    if(!item) return;
+    if(item.id) localMap.set(String(item.id), item);
+    if(item._displayId) localMap.set(String(item._displayId), item);
+    if(item.original_id) localMap.set(String(item.original_id), item);
+    const nameKey = (item.name || item['CUSTOMER NAME'] || item['SUPPLIER NAME'] || item['EMPLOYEE NAME'] || '').trim().toLowerCase();
+    if(nameKey) localMap.set(nameKey, item);
+  });
+
+  const matchedLocalItems = new Set();
+
+  const mergedDbRows = dbRows.map(r => {
     const nameKey = (r.name || '').trim().toLowerCase();
     const existing = localMap.get(String(r.id)) || (nameKey ? localMap.get(nameKey) : null);
     if(existing){
+      matchedLocalItems.add(existing);
       const merged = Object.assign({}, existing, r);
       Object.keys(existing).forEach(k => {
         if(existing[k] !== undefined && existing[k] !== null && existing[k] !== '' &&
@@ -3977,8 +3987,16 @@ async function __hydrateEntity(entity){
     return r;
   });
 
-  __setEntityArray(entity,finalRows);
-  __nativeSet(cfg.key,JSON.stringify(finalRows));
+  // IMPORTANT: Any local rows that were NOT in Supabase yet must NOT be lost!
+  const unSyncedLocalRows = localList.filter(item => !matchedLocalItems.has(item));
+  const finalRows = [...mergedDbRows, ...unSyncedLocalRows];
+
+  __setEntityArray(entity, finalRows);
+  __nativeSet(cfg.key, JSON.stringify(finalRows));
+
+  if(unSyncedLocalRows.length > 0){
+    __scheduleEntitySync(entity);
+  }
 }
 
 async function __hydrateAllData(){
@@ -5084,6 +5102,9 @@ function saveDynamicRow(){
   const stKey = storageMap[currentEditingEntity];
   if(stKey){
     localStorage.setItem(stKey, JSON.stringify(dataset));
+    if(sb && currentBusiness?.id && KENDRA_ENTITY_MAP[currentEditingEntity]){
+      __scheduleEntitySync(currentEditingEntity);
+    }
   }
 
   closeModal('dynamicRowModal');
@@ -5179,6 +5200,7 @@ function deleteEmployee(id){
 
   employees = employees.filter(e => !(e.id === id || e._rowId === id || (e['EMPLOYEE ID'] && e['EMPLOYEE ID'] === id)));
   localStorage.setItem('kendra_employees_list', JSON.stringify(employees));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('employees');
 
   renderEmp();
   computeDashboard();
@@ -5197,6 +5219,7 @@ function bulkDeleteEmployees(){
 
   employees = employees.filter(e => !checked.includes(e.id) && !checked.includes(e._rowId) && !checked.includes(e['EMPLOYEE ID']));
   localStorage.setItem('kendra_employees_list', JSON.stringify(employees));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('employees');
 
   renderEmp();
   computeDashboard();
@@ -5279,6 +5302,7 @@ function deleteCustomer(id){
 
   customers = customers.filter(c => !(c.id === id || c._rowId === id || (c['CUSTOMER ID'] && c['CUSTOMER ID'] === id)));
   localStorage.setItem('kendra_customers_list', JSON.stringify(customers));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('customers');
 
   renderCust();
   computeDashboard();
@@ -5297,6 +5321,7 @@ function bulkDeleteCust(){
 
   customers = customers.filter(c => !checked.includes(c.id) && !checked.includes(c._rowId) && !checked.includes(c['CUSTOMER ID']));
   localStorage.setItem('kendra_customers_list', JSON.stringify(customers));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('customers');
 
   renderCust();
   computeDashboard();
@@ -5380,6 +5405,7 @@ function deleteProduct(id){
 
   products = products.filter(p => !(p.id === id || p._rowId === id || (p['PRODUCT ID'] && p['PRODUCT ID'] === id) || (p.sku && p.sku === id)));
   localStorage.setItem('kendra_products_list', JSON.stringify(products));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('products');
 
   renderInv();
   computeDashboard();
@@ -5398,6 +5424,7 @@ function bulkDeleteInv(){
 
   products = products.filter(p => !checked.includes(p.id) && !checked.includes(p._rowId) && !checked.includes(p['PRODUCT ID']) && !checked.includes(p.sku));
   localStorage.setItem('kendra_products_list', JSON.stringify(products));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('products');
 
   renderInv();
   computeDashboard();
@@ -5497,6 +5524,75 @@ function editSupplier(id){
   openDynamicRowEditor('suppliers', id);
 }
 
+function saveSupplier(){
+  const editId = document.getElementById('supplierEditId')?.value;
+  const name = (document.getElementById('supName')?.value || '').trim();
+  const contact = (document.getElementById('supContact')?.value || '').trim();
+  const gst = (document.getElementById('supGst')?.value || '').trim();
+  const email = (document.getElementById('supEmail')?.value || '').trim();
+  const phone = (document.getElementById('supPhone')?.value || '').trim();
+  const terms = (document.getElementById('supTerms')?.value || 'Net 30').trim();
+  const rating = Number(document.getElementById('supRating')?.value) || 5.0;
+  const address = (document.getElementById('supAddress')?.value || '').trim();
+  const productsVal = (document.getElementById('supProducts')?.value || '').trim();
+  const notes = (document.getElementById('supNotes')?.value || '').trim();
+
+  if(!name){
+    showToast('Please enter a supplier or vendor name', true);
+    return;
+  }
+
+  if(editId){
+    const idx = suppliers.findIndex(s => s.id === editId || s['SUPPLIER ID'] === editId || s._rowId === editId);
+    if(idx !== -1){
+      suppliers[idx] = {
+        ...suppliers[idx],
+        name,
+        contact_person: contact,
+        gst_number: gst,
+        gst,
+        email,
+        phone,
+        payment_terms: terms,
+        rating,
+        address,
+        supplied_products: productsVal,
+        notes
+      };
+      syncEntityAliases(suppliers[idx]);
+      showToast('Supplier updated successfully!');
+    }
+  } else {
+    const newSupp = {
+      id: 'supp-' + Date.now(),
+      name,
+      contact_person: contact,
+      gst_number: gst,
+      gst,
+      email,
+      phone,
+      payment_terms: terms,
+      rating,
+      address,
+      supplied_products: productsVal,
+      notes,
+      created_at: todayStr(),
+      status: 'Active'
+    };
+    syncEntityAliases(newSupp);
+    suppliers.unshift(newSupp);
+    showToast('Supplier added successfully!');
+  }
+
+  localStorage.setItem('kendra_suppliers_list', JSON.stringify(suppliers));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('suppliers');
+
+  closeModal('supplierModal');
+  renderSuppliers();
+  computeDashboard();
+  if(typeof computeHealthScore === 'function') computeHealthScore();
+}
+
 function deleteSupplier(id){
   if(!id) return;
   const supp = suppliers.find(s => s.id === id || s['SUPPLIER ID'] === id || s['SUPPLIER_ID'] === id || s._rowId === id);
@@ -5506,6 +5602,7 @@ function deleteSupplier(id){
 
   suppliers = suppliers.filter(s => !(s.id === id || s['SUPPLIER ID'] === id || s['SUPPLIER_ID'] === id || s._rowId === id));
   localStorage.setItem('kendra_suppliers_list', JSON.stringify(suppliers));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('suppliers');
 
   renderSuppliers();
   computeDashboard();
@@ -5524,6 +5621,7 @@ function bulkDeleteSupp(){
 
   suppliers = suppliers.filter(s => !checked.includes(s.id) && !checked.includes(s._rowId) && !checked.includes(s['SUPPLIER ID']));
   localStorage.setItem('kendra_suppliers_list', JSON.stringify(suppliers));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('suppliers');
 
   renderSuppliers();
   computeDashboard();
@@ -5555,10 +5653,20 @@ function clearSuppSelection(){
 }
 
 function renderSuppliers(){
+  const activeCount = suppliers.filter(s => (s.status || s.STATUS || 'Active').toLowerCase() === 'active').length;
+  const totalOrders = suppliers.reduce((acc, s) => acc + (Number(s.total_orders || s['TOTAL ORDERS'] || s['Total Orders'] || s.orders || 0) || 0), 0);
+  const totalPayables = suppliers.reduce((acc, s) => acc + (Number(s.total_purchase_value || s['TOTAL PURCHASE VALUE'] || s['Total Purchase Value'] || s.payables || s.balance || 0) || 0), 0);
+
   if(document.getElementById('supplierCount')) document.getElementById('supplierCount').textContent = suppliers.length;
-  if(document.getElementById('supplierActive')) document.getElementById('supplierActive').textContent = suppliers.length;
-  if(document.getElementById('supplierPOs')) document.getElementById('supplierPOs').textContent = '2';
-  if(document.getElementById('supplierPayables')) document.getElementById('supplierPayables').textContent = INR(124000);
+  if(document.getElementById('supplierActive')) document.getElementById('supplierActive').textContent = activeCount;
+  if(document.getElementById('supplierPOs')) document.getElementById('supplierPOs').textContent = String(totalOrders || '0');
+  if(document.getElementById('supplierPayables')) document.getElementById('supplierPayables').textContent = INR(totalPayables);
+
+  const searchVal = (document.getElementById('supplierSearch')?.value || '').toLowerCase().trim();
+  let filteredSuppliers = suppliers;
+  if(searchVal){
+    filteredSuppliers = suppliers.filter(s => Object.values(s).some(val => val !== undefined && val !== null && String(val).toLowerCase().includes(searchVal)));
+  }
 
   renderDynamicTable({
     tableId: 'supplierBody',
@@ -5567,7 +5675,7 @@ function renderSuppliers(){
     editBtnId: 'suppBulkEditBtn',
     selectAllId: 'suppSelectAll',
     rowCheckboxClass: 'supp-row-select',
-    data: suppliers,
+    data: filteredSuppliers,
     defaultColumns: [
       { key: 'name', label: 'Supplier Name' },
       { key: 'contact_person', label: 'Contact Person' },
@@ -8593,12 +8701,40 @@ function initDefaultSampleData(){
 }
 
 async function loadAll(){
-  // Only fall back to localStorage cache if Supabase has NOT already hydrated the
-  // in-memory arrays. When __dataHydratedFromSupabase is true, the arrays already
-  // contain the authoritative cloud data.
+  // Load from localStorage cache
   if(!__dataHydratedFromSupabase){
     initDefaultSampleData();
   }
+
+  // Resilient safety net: ensure arrays are never null or empty if localStorage has records
+  if(!employees || !employees.length){
+    try{ const e = __nativeLocalStorage.getItem('kendra_employees_list'); if(e) employees = JSON.parse(e).filter(x => !isSampleRecord(x)); }catch(err){}
+  }
+  if(!customers || !customers.length){
+    try{ const c = __nativeLocalStorage.getItem('kendra_customers_list'); if(c) customers = JSON.parse(c).filter(x => !isSampleRecord(x)); }catch(err){}
+  }
+  if(!products || !products.length){
+    try{ const p = __nativeLocalStorage.getItem('kendra_products_list'); if(p) products = JSON.parse(p).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeProductRecord(item, idx)); }catch(err){}
+  }
+  if(!suppliers || !suppliers.length){
+    try{ const s = __nativeLocalStorage.getItem('kendra_suppliers_list'); if(s) suppliers = JSON.parse(s).filter(x => !isSampleRecord(x)); }catch(err){}
+  }
+  if(!goodsMovements || !goodsMovements.length){
+    try{ const g = __nativeLocalStorage.getItem('kendra_goods_list'); if(g) goodsMovements = JSON.parse(g).filter(x => !isSampleRecord(x)); }catch(err){}
+  }
+  if(!invoices || !invoices.length){
+    try{ const inv = __nativeLocalStorage.getItem('kendra_invoices_list'); if(inv) invoices = JSON.parse(inv).filter(x => !isSampleRecord(x)); }catch(err){}
+  }
+  if(!expenses || !expenses.length){
+    try{ const ex = __nativeLocalStorage.getItem('kendra_expenses_list'); if(ex) expenses = JSON.parse(ex).filter(x => !isSampleRecord(x)); }catch(err){}
+  }
+  if(!tasks || !tasks.length){
+    try{ const t = __nativeLocalStorage.getItem('kendra_tasks_list'); if(t) tasks = JSON.parse(t).filter(x => !isSampleRecord(x)); }catch(err){}
+  }
+  if(!documents || !documents.length){
+    try{ const d = __nativeLocalStorage.getItem('kendra_documents_list'); if(d) documents = JSON.parse(d).filter(x => !isSampleRecord(x)); }catch(err){}
+  }
+
   // Enforce zero test data
   employees = (employees || []).filter(x => !isSampleRecord(x));
   customers = (customers || []).filter(x => !isSampleRecord(x));
@@ -8631,6 +8767,185 @@ function initApp(){
 document.addEventListener('DOMContentLoaded', () => {
   initAuth();
 });
+
+
+function saveCustomer(){
+  const editId = document.getElementById('custEditId')?.value;
+  const name = (document.getElementById('cName')?.value || '').trim();
+  const email = (document.getElementById('cEmail')?.value || '').trim();
+  const phone = (document.getElementById('cPhone')?.value || '').trim();
+  const city = (document.getElementById('cCity')?.value || '').trim();
+  const ltv = Number(document.getElementById('cLtv')?.value) || 0;
+  const outstanding = Number(document.getElementById('cBalance')?.value) || 0;
+  const notes = (document.getElementById('cNotes')?.value || '').trim();
+
+  if(!name){
+    showToast('Please enter customer name', true);
+    return;
+  }
+
+  if(editId){
+    const idx = customers.findIndex(c => c.id === editId || c._rowId === editId || (c['CUSTOMER ID'] && c['CUSTOMER ID'] === editId));
+    if(idx !== -1){
+      customers[idx] = { ...customers[idx], name, email, phone, city, ltv, outstanding_balance: outstanding, notes };
+      syncEntityAliases(customers[idx]);
+      showToast('Customer updated successfully!');
+    }
+  } else {
+    const newCust = {
+      id: 'cust-' + Date.now(),
+      name, email, phone, city, ltv, outstanding_balance: outstanding, notes,
+      status: 'Active',
+      created_at: todayStr()
+    };
+    syncEntityAliases(newCust);
+    customers.unshift(newCust);
+    showToast('Customer added successfully!');
+  }
+
+  localStorage.setItem('kendra_customers_list', JSON.stringify(customers));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('customers');
+
+  closeModal('custModal');
+  renderCust();
+  computeDashboard();
+  if(typeof computeHealthScore === 'function') computeHealthScore();
+}
+
+function saveEmployee(){
+  const editId = document.getElementById('empEditId')?.value;
+  const name = (document.getElementById('empName')?.value || '').trim();
+  const dept = (document.getElementById('empDept')?.value || 'Operations').trim();
+  const role = (document.getElementById('empRole')?.value || '').trim();
+  const salary = Number(document.getElementById('empSalary')?.value) || 0;
+  const phone = (document.getElementById('empPhone')?.value || '').trim();
+  const email = (document.getElementById('empEmail')?.value || '').trim();
+  const att = Number(document.getElementById('empAtt')?.value) || 95;
+  const notes = (document.getElementById('empNotes')?.value || '').trim();
+
+  if(!name){
+    showToast('Please enter employee name', true);
+    return;
+  }
+
+  if(editId){
+    const idx = employees.findIndex(e => e.id === editId || e._rowId === editId || (e['EMPLOYEE ID'] && e['EMPLOYEE ID'] === editId));
+    if(idx !== -1){
+      employees[idx] = { ...employees[idx], name, department: dept, role, designation: role, salary, phone, email, attendance_pct: att, notes };
+      syncEntityAliases(employees[idx]);
+      showToast('Employee updated successfully!');
+    }
+  } else {
+    const newEmp = {
+      id: 'emp-' + Date.now(),
+      name, department: dept, role, designation: role, salary, phone, email, attendance_pct: att, notes,
+      status: 'Active',
+      created_at: todayStr()
+    };
+    syncEntityAliases(newEmp);
+    employees.unshift(newEmp);
+    showToast('Employee added successfully!');
+  }
+
+  localStorage.setItem('kendra_employees_list', JSON.stringify(employees));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('employees');
+
+  closeModal('empModal');
+  renderEmp();
+  computeDashboard();
+  if(typeof computeHealthScore === 'function') computeHealthScore();
+}
+
+function saveProduct(){
+  const editId = document.getElementById('prodEditId')?.value;
+  const name = (document.getElementById('pName')?.value || '').trim();
+  const sku = (document.getElementById('pSku')?.value || '').trim();
+  const cat = (document.getElementById('pCategory')?.value || 'General').trim();
+  const price = Number(document.getElementById('pSellingPrice')?.value) || 0;
+  const cost = Number(document.getElementById('pPurchasePrice')?.value) || 0;
+  const stock = Number(document.getElementById('pStock')?.value) || 0;
+  const minStock = Number(document.getElementById('pMinStock')?.value) || 10;
+  const supp = (document.getElementById('pSupplier')?.value || '').trim();
+  const notes = (document.getElementById('pNotes')?.value || '').trim();
+
+  if(!name){
+    showToast('Please enter product name', true);
+    return;
+  }
+
+  if(editId){
+    const idx = products.findIndex(p => p.id === editId || p._rowId === editId || (p['PRODUCT ID'] && p['PRODUCT ID'] === editId) || (p.sku && p.sku === editId));
+    if(idx !== -1){
+      products[idx] = { ...products[idx], name, sku, category: cat, price, selling_price: price, cost, purchase_price: cost, stock, min_stock: minStock, reorder_point: minStock, supplier: supp, notes };
+      syncEntityAliases(products[idx]);
+      showToast('Product updated successfully!');
+    }
+  } else {
+    const newProd = {
+      id: 'prod-' + Date.now(),
+      name, sku, category: cat, price, selling_price: price, cost, purchase_price: cost, stock, min_stock: minStock, reorder_point: minStock, supplier: supp, notes,
+      status: 'In Stock',
+      created_at: todayStr()
+    };
+    syncEntityAliases(newProd);
+    products.unshift(newProd);
+    showToast('Product added successfully!');
+  }
+
+  localStorage.setItem('kendra_products_list', JSON.stringify(products));
+  if(sb && currentBusiness?.id) __scheduleEntitySync('products');
+
+  closeModal('prodModal');
+  renderInv();
+  computeDashboard();
+  if(typeof computeHealthScore === 'function') computeHealthScore();
+}
+
+function openMobileSidebar(){
+  const s = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  if(s) s.classList.add('mobile-open');
+  if(ov) ov.classList.add('active');
+}
+
+function closeMobileSidebar(){
+  const s = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  if(s) s.classList.remove('mobile-open');
+  if(ov) ov.classList.remove('active');
+}
+
+function closeDrawer(){
+  const d = document.getElementById('drawer');
+  const o = document.getElementById('drawerOverlay');
+  if(d) d.classList.remove('open');
+  if(o) o.classList.remove('active');
+}
+
+function completeOnboarding(){
+  closeModal('onboardingModal');
+  showPage('dashboard');
+  showToast('Welcome to Kendra Enterprise OS!');
+}
+
+let currentCustFilter = 'all';
+function filterCust(btn, type){
+  currentCustFilter = type;
+  document.querySelectorAll('#page-crm .chip').forEach(c => c.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderCust();
+}
+
+function filterInv2(btn, type){
+  filterInv(type, btn);
+}
+
+function applyBulkEditEmp(){
+  closeModal('empBulkModal');
+  renderEmp();
+  showToast('Bulk update applied.');
+}
+
 
 // ==========================================
 // COMPATIBILITY & UNIVERSAL FUNCTION ALIASES
