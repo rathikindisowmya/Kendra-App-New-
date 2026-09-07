@@ -3611,10 +3611,10 @@ function __isUuid(value){
 function __dbColumnsForEntity(entity){ return new Set(KENDRA_ENTITY_MAP[entity]?.columns || []); }
 function __entityArrayRef(entity){ return ({employees,customers,products,suppliers,goodsMovements,invoices,expenses,tasks,documents})[entity]; }
 function __setEntityArray(entity, data){
-  if(entity==='employees') employees=data||[];
-  else if(entity==='customers') customers=data||[];
+  if(entity==='employees') employees=(data||[]).map((item,idx)=>normalizeEmployeeRecord(item,idx));
+  else if(entity==='customers') customers=(data||[]).map((item,idx)=>normalizeCustomerRecord(item,idx));
   else if(entity==='products') products=(data||[]).map((item,idx)=>normalizeProductRecord(item,idx));
-  else if(entity==='suppliers') suppliers=data||[];
+  else if(entity==='suppliers') suppliers=(data||[]).map((item,idx)=>normalizeSupplierRecord(item,idx));
   else if(entity==='goodsMovements') goodsMovements=data||[];
   else if(entity==='invoices') invoices=data||[];
   else if(entity==='expenses') expenses=data||[];
@@ -4236,9 +4236,12 @@ function getEntityStatus(rec){
 }
 
 function isStatusActive(val){
-  if(!val || val === '-' || val === 'N/A' || val === 'null' || val === 'undefined') return false;
+  if(!val || val === '-' || val === 'N/A' || val === 'null' || val === 'undefined') return true;
   const s = String(val).trim().toLowerCase();
-  return s === 'active' || s === 'permanent' || s === 'confirmed' || s === 'full-time' || s === 'verified' || s === 'in stock' || s === 'completed' || s === 'paid' || s === 'healthy';
+  if(s.includes('inactive') || s.includes('terminated') || s.includes('resigned') || s.includes('blocked') || s.includes('blacklisted') || s.includes('expired') || s.includes('rejected') || s.includes('cancelled') || s.includes('leave') || s.includes('pending') || s.includes('due') || s.includes('probation') || s.includes('hold') || s.includes('draft') || s.includes('out of stock')){
+    return false;
+  }
+  return true;
 }
 
 function isStatusLeave(val){
@@ -4604,6 +4607,235 @@ function normalizeProductRecord(p, index = 0){
     "SELLING PRICE": price,
     "STOCK VALUE": stockValue,
     "Stock Value": stockValue
+  };
+}
+
+function getCustomerField(c, aliases){
+  if(!c || typeof c !== 'object') return undefined;
+  const normKeys = Object.keys(c).map(k => ({ raw: k, clean: k.toLowerCase().replace(/[^a-z0-9]/g, '') }));
+  for(const a of aliases){
+    const cleanA = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const found = normKeys.find(nk => nk.clean === cleanA);
+    if(found && c[found.raw] !== undefined && c[found.raw] !== null && String(c[found.raw]).trim() !== ''){
+      return c[found.raw];
+    }
+  }
+  for(const a of aliases){
+    if(c[a] !== undefined && c[a] !== null && String(c[a]).trim() !== '') return c[a];
+  }
+  return undefined;
+}
+
+function normalizeCustomerRecord(c, index = 0){
+  if(!c || typeof c !== 'object') return c;
+  const rowId = getCustomerField(c, ['id', '_rowId', 'customer_id', 'client_id', 'cust_id', 'code']) || ('cust-' + Date.now() + '-' + index);
+  let name = getCustomerField(c, ['name', 'customer_name', 'client_name', 'company_name', 'full_name', 'customer', 'client']);
+  if(!name){
+    const fName = getCustomerField(c, ['first_name', 'firstname', 'fname']);
+    const lName = getCustomerField(c, ['last_name', 'lastname', 'lname', 'surname']);
+    if(fName || lName){
+      name = [fName, lName].filter(Boolean).join(' ');
+    } else {
+      name = 'Customer ' + (index + 1);
+    }
+  }
+
+  const phone = getCustomerField(c, ['phone', 'mobile', 'phone_number', 'mobile_number', 'contact', 'contact_number', 'cell']) || '';
+  const email = getCustomerField(c, ['email', 'email_address', 'mail', 'email_id']) || '';
+  const city = getCustomerField(c, ['city', 'location', 'address', 'town', 'area', 'region', 'state_name']) || '';
+
+  const rawLtv = getCustomerField(c, [
+    'total_amount', 'total_purchase_value', 'ltv', 'lifetime_value', 'total_spent',
+    'total_purchases', 'total_sales', 'total_value', 'grand_total', 'amount',
+    'net_amount', 'billing_amount', 'bill_amount', 'purchases', 'sales', 'spent'
+  ]);
+  const ltv = parseCleanNumber(rawLtv);
+
+  const rawOutstanding = getCustomerField(c, ['outstanding', 'outstanding_balance', 'balance', 'pending_amount', 'due_amount', 'payables', 'dues']);
+  const outstanding = parseCleanNumber(rawOutstanding);
+
+  const rawOrders = getCustomerField(c, ['total_orders', 'orders', 'order_count', 'visits', 'purchases_count', 'transactions']);
+  const totalOrders = parseCleanNumber(rawOrders);
+
+  let status = getCustomerField(c, ['status', 'customer_status', 'account_status', 'state', 'stage', 'condition']);
+  if(!status || status === '-' || status === 'N/A' || status === 'null'){
+    status = 'Active';
+  } else {
+    status = String(status).trim();
+  }
+
+  return {
+    ...c,
+    id: rowId,
+    name: name,
+    phone: phone,
+    email: email,
+    city: city,
+    ltv: ltv,
+    total_amount: ltv,
+    total_purchase_value: ltv,
+    outstanding_balance: outstanding,
+    outstanding: outstanding,
+    total_orders: totalOrders,
+    orders: totalOrders,
+    status: status,
+    // Sync all normalized keys on object
+    "CUSTOMER NAME": name,
+    "Customer Name": name,
+    "TOTAL AMOUNT": ltv,
+    "Total Amount": ltv,
+    "LTV": ltv,
+    "Lifetime Value": ltv,
+    "OUTSTANDING": outstanding,
+    "Outstanding": outstanding,
+    "TOTAL ORDERS": totalOrders,
+    "Total Orders": totalOrders,
+    "STATUS": status,
+    "Status": status,
+    "CITY": city,
+    "City": city,
+    "PHONE": phone,
+    "Phone": phone,
+    "EMAIL": email,
+    "Email": email
+  };
+}
+
+function getEmployeeField(e, aliases){
+  if(!e || typeof e !== 'object') return undefined;
+  const normKeys = Object.keys(e).map(k => ({ raw: k, clean: k.toLowerCase().replace(/[^a-z0-9]/g, '') }));
+  for(const a of aliases){
+    const cleanA = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const found = normKeys.find(nk => nk.clean === cleanA);
+    if(found && e[found.raw] !== undefined && e[found.raw] !== null && String(e[found.raw]).trim() !== ''){
+      return e[found.raw];
+    }
+  }
+  for(const a of aliases){
+    if(e[a] !== undefined && e[a] !== null && String(e[a]).trim() !== '') return e[a];
+  }
+  return undefined;
+}
+
+function normalizeEmployeeRecord(e, index = 0){
+  if(!e || typeof e !== 'object') return e;
+  const rowId = getEmployeeField(e, ['id', '_rowId', 'employee_id', 'emp_id', 'staff_id', 'code']) || ('emp-' + Date.now() + '-' + index);
+  let name = getEmployeeField(e, ['name', 'employee_name', 'staff_name', 'full_name', 'employee', 'staff']);
+  if(!name){
+    const fName = getEmployeeField(e, ['first_name', 'firstname', 'fname']);
+    const lName = getEmployeeField(e, ['last_name', 'lastname', 'lname', 'surname']);
+    if(fName || lName){
+      name = [fName, lName].filter(Boolean).join(' ');
+    } else {
+      name = 'Employee ' + (index + 1);
+    }
+  }
+  const department = getEmployeeField(e, ['department', 'dept', 'division', 'team', 'branch']) || 'Operations';
+  const role = getEmployeeField(e, ['role', 'designation', 'position', 'title', 'job_title']) || 'Staff';
+  const rawSalary = getEmployeeField(e, ['salary', 'monthly_salary', 'ctc', 'wage', 'pay', 'monthly_pay']);
+  const salary = parseCleanNumber(rawSalary);
+  const rawAtt = getEmployeeField(e, ['attendance', 'attendance_pct', 'att', 'attendance_percentage']);
+  const attendancePct = rawAtt !== undefined && String(rawAtt).trim() !== '' ? parseCleanNumber(rawAtt) : 95;
+  const phone = getEmployeeField(e, ['phone', 'mobile', 'contact', 'contact_number']) || '';
+  const email = getEmployeeField(e, ['email', 'mail', 'email_id']) || '';
+  const joinDate = getEmployeeField(e, ['join_date', 'joining_date', 'date_of_joining', 'hire_date', 'start_date']) || '';
+  let status = getEmployeeField(e, ['status', 'employment_status', 'employee_status', 'state']);
+  if(!status || status === '-' || status === 'N/A' || status === 'null'){
+    status = 'Active';
+  } else {
+    status = String(status).trim();
+  }
+  return {
+    ...e,
+    id: rowId,
+    name: name,
+    department: department,
+    role: role,
+    salary: salary,
+    attendance_pct: attendancePct,
+    phone: phone,
+    email: email,
+    join_date: joinDate ? (normalizeDateUniversal(joinDate) || joinDate) : '',
+    status: status,
+    "EMPLOYEE NAME": name,
+    "Employee Name": name,
+    "DEPARTMENT": department,
+    "Department": department,
+    "ROLE": role,
+    "Role": role,
+    "SALARY": salary,
+    "Salary": salary,
+    "Monthly Salary": salary,
+    "STATUS": status,
+    "Status": status
+  };
+}
+
+function getSupplierField(s, aliases){
+  if(!s || typeof s !== 'object') return undefined;
+  const normKeys = Object.keys(s).map(k => ({ raw: k, clean: k.toLowerCase().replace(/[^a-z0-9]/g, '') }));
+  for(const a of aliases){
+    const cleanA = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const found = normKeys.find(nk => nk.clean === cleanA);
+    if(found && s[found.raw] !== undefined && s[found.raw] !== null && String(s[found.raw]).trim() !== ''){
+      return s[found.raw];
+    }
+  }
+  for(const a of aliases){
+    if(s[a] !== undefined && s[a] !== null && String(s[a]).trim() !== '') return s[a];
+  }
+  return undefined;
+}
+
+function normalizeSupplierRecord(s, index = 0){
+  if(!s || typeof s !== 'object') return s;
+  const rowId = getSupplierField(s, ['id', '_rowId', 'supplier_id', 'vendor_id', 'supp_id', 'code']) || ('supp-' + Date.now() + '-' + index);
+  let name = getSupplierField(s, ['name', 'supplier_name', 'vendor_name', 'company_name', 'supplier', 'vendor']);
+  if(!name) name = 'Supplier ' + (index + 1);
+  const contact = getSupplierField(s, ['contact_person', 'contact', 'person', 'representative']) || '';
+  const phone = getSupplierField(s, ['phone', 'mobile', 'contact_number']) || '';
+  const email = getSupplierField(s, ['email', 'mail', 'email_id']) || '';
+  const city = getSupplierField(s, ['city', 'location', 'address', 'state_name']) || '';
+  const category = getSupplierField(s, ['category', 'type', 'items_supplied', 'supplies', 'segment']) || 'Tyres & Parts';
+  const rawRating = getSupplierField(s, ['rating', 'score', 'vendor_rating']);
+  const rating = rawRating !== undefined && String(rawRating).trim() !== '' ? parseFloat(String(rawRating).replace(/[^0-9.]/g, '')) || 4.5 : 4.5;
+  const rawOrders = getSupplierField(s, ['total_orders', 'orders', 'pos', 'po_count']);
+  const totalOrders = parseCleanNumber(rawOrders);
+  const rawPayables = getSupplierField(s, ['total_purchase_value', 'payables', 'balance', 'outstanding', 'amount_due', 'dues']);
+  const totalPurchaseValue = parseCleanNumber(rawPayables);
+  let status = getSupplierField(s, ['status', 'supplier_status', 'vendor_status', 'state']);
+  if(!status || status === '-' || status === 'N/A' || status === 'null'){
+    status = 'Active';
+  } else {
+    status = String(status).trim();
+  }
+  return {
+    ...s,
+    id: rowId,
+    name: name,
+    contact_person: contact,
+    phone: phone,
+    email: email,
+    city: city,
+    category: category,
+    rating: rating,
+    total_orders: totalOrders,
+    orders: totalOrders,
+    total_purchase_value: totalPurchaseValue,
+    payables: totalPurchaseValue,
+    status: status,
+    "SUPPLIER NAME": name,
+    "Supplier Name": name,
+    "CITY": city,
+    "City": city,
+    "RATING": rating,
+    "Rating": rating,
+    "TOTAL ORDERS": totalOrders,
+    "Total Orders": totalOrders,
+    "TOTAL PURCHASE VALUE": totalPurchaseValue,
+    "Total Purchase Value": totalPurchaseValue,
+    "STATUS": status,
+    "Status": status
   };
 }
 
@@ -5952,11 +6184,10 @@ function filterCustByCard(type){
 }
 
 function renderCust(){
-  const validCusts = (customers || []).filter(c => c && typeof c === 'object' && Object.values(c).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
+  customers = (customers || []).map((c, idx) => normalizeCustomerRecord(c, idx));
+  const validCusts = customers.filter(c => c && typeof c === 'object' && Object.values(c).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
 
-  validCusts.forEach(c => syncEntityAliases(c));
-
-  const totalLtv = validCusts.reduce((sum, c) => sum + parseCleanNumber(c.ltv || c.LTV || c['Lifetime Value'] || c.total_amount || c.total_purchase_value || 0), 0);
+  const totalLtv = validCusts.reduce((sum, c) => sum + parseCleanNumber(c.ltv || c.total_amount || 0), 0);
   const avgLtv = validCusts.length ? Math.round(totalLtv / validCusts.length) : 0;
   const activeCount = validCusts.filter(c => isStatusActive(getEntityStatus(c))).length;
 
@@ -7137,6 +7368,11 @@ function askCopilot(customQuery){
   chat.scrollTop = chat.scrollHeight;
 
   // 1. Calculate Live Aggregated Real-Time Business Data
+  customers = (customers || []).map((c, idx) => normalizeCustomerRecord(c, idx));
+  employees = (employees || []).map((e, idx) => normalizeEmployeeRecord(e, idx));
+  suppliers = (suppliers || []).map((s, idx) => normalizeSupplierRecord(s, idx));
+  products  = (products || []).map((p, idx) => normalizeProductRecord(p, idx));
+
   var mMetrics = (typeof getAggregatedBusinessMetrics === 'function') ? getAggregatedBusinessMetrics() : { totalRev: 0, totalExp: 0, netProfit: 0, profitMargin: 0, paidRev: 0, receivables: 0 };
   
   var totalRev      = mMetrics.totalRev || 0;
@@ -7163,7 +7399,7 @@ function askCopilot(customQuery){
 
   var totalCust     = (customers||[]).length;
   var activeCust    = (customers||[]).filter(function(c){return isStatusActive(getEntityStatus(c));}).length;
-  var totalLtv      = (customers||[]).reduce(function(s,c){return s+parseCleanNumber(c.ltv||c.LTV||c.total_amount||c.total_purchase_value||0);},0);
+  var totalLtv      = (customers||[]).reduce(function(s,c){return s+parseCleanNumber(c.ltv||c.total_amount||c.total_purchase_value||0);},0);
   var avgLtv        = totalCust > 0 ? Math.round(totalLtv / totalCust) : 0;
 
   var totalEmp      = (employees||[]).length;
@@ -7377,18 +7613,87 @@ function askCopilot(customQuery){
   }
 
   // ══════════════════════════════════════════════════════════
-  // 6. CUSTOMER & CRM QUERIES
+  // 6. TOP / HIGHEST CUSTOMER BY TOTAL AMOUNT & LTV (DIRECT ANSWER)
+  // ══════════════════════════════════════════════════════════
+  else if(
+    (cleanQ.includes('customer') || cleanQ.includes('client') || cleanQ.includes('buyer') || cleanQ.includes('account')) &&
+    (cleanQ.includes('highest') || cleanQ.includes('high') || cleanQ.includes('top') || cleanQ.includes('most') || cleanQ.includes('max') || cleanQ.includes('maximum') || cleanQ.includes('best') || cleanQ.includes('biggest') || cleanQ.includes('largest') || cleanQ.includes('rank') || cleanQ.includes('leader'))
+  ||
+    cleanQ.includes('total amount high') || cleanQ.includes('amount high') || cleanQ.includes('highest amount') || cleanQ.includes('who spent the most') || cleanQ.includes('who has highest') || cleanQ.includes('highest total amount') || cleanQ.includes('top spending') || cleanQ.includes('highest spender') || cleanQ.includes('best customer')
+  ){
+    var sortedCusts = (customers || []).slice().sort(function(a, b){
+      return parseCleanNumber(b.ltv || b.total_amount || b.total_purchase_value || b['TOTAL AMOUNT'] || 0) - parseCleanNumber(a.ltv || a.total_amount || a.total_purchase_value || a['TOTAL AMOUNT'] || 0);
+    });
+
+    if(sortedCusts.length === 0){
+      reply = '&#128101; <b>Customer Insights:</b><br><br>No customer records found yet in the system.<br><br>' +
+        '<button class="btn btn-primary btn-sm" onclick="showPage(\'crm\');closeCopilot();">Open CRM Directory &#8594;</button>';
+    } else {
+      var topOne = sortedCusts[0];
+      var topVal = parseCleanNumber(topOne.ltv || topOne.total_amount || topOne.total_purchase_value || topOne['TOTAL AMOUNT'] || 0);
+      var topName = topOne.name || topOne.customer_name || topOne['CUSTOMER NAME'] || 'Top Customer';
+      var topCity = topOne.city || topOne.location || topOne.address || topOne['CITY'] || 'N/A';
+      var topPhone = topOne.phone || topOne.mobile || topOne['PHONE'] || 'N/A';
+      var topOrders = parseCleanNumber(topOne.total_orders || topOne.orders || topOne['TOTAL ORDERS'] || 1);
+      var topStatus = topOne.status || topOne['STATUS'] || 'Active';
+
+      var topLeaderboard = sortedCusts.slice(0, 5).map(function(c, rank){
+        var cVal = parseCleanNumber(c.ltv || c.total_amount || c.total_purchase_value || c['TOTAL AMOUNT'] || 0);
+        var cName = c.name || c.customer_name || c['CUSTOMER NAME'] || ('Customer ' + (rank + 1));
+        var cCity = c.city || c.location || c['CITY'] || '';
+        var cStatus = c.status || 'Active';
+        var medal = rank === 0 ? '&#129351; #1' : (rank === 1 ? '&#129352; #2' : (rank === 2 ? '&#129353; #3' : '#' + (rank + 1)));
+        return '<tr>' +
+          '<td style="padding:7px 10px;border-bottom:1px solid var(--line);font-weight:700;">' + medal + '</td>' +
+          '<td style="padding:7px 10px;border-bottom:1px solid var(--line);font-weight:600;">' + escapeHtml(cName) + '</td>' +
+          '<td style="padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;font-weight:700;color:var(--teal);">' + INR(cVal) + '</td>' +
+          '<td style="padding:7px 10px;border-bottom:1px solid var(--line);text-align:center;">' + escapeHtml(cCity || '-') + '</td>' +
+          '<td style="padding:7px 10px;border-bottom:1px solid var(--line);text-align:center;"><span class="badge ' + (isStatusActive(cStatus) ? 'badge-green' : 'badge-amber') + '">' + escapeHtml(cStatus) + '</span></td>' +
+        '</tr>';
+      }).join('');
+
+      reply = '&#127942; <b>Top Customer by Total Amount (LTV):</b><br><br>' +
+        'The customer with the highest total amount is <b>' + escapeHtml(topName) + '</b> with a total value of <b style="color:var(--teal);font-size:14px;">' + INR(topVal) + '</b>.<br><br>' +
+        '&bull; <b>Customer Name:</b> <b>' + escapeHtml(topName) + '</b><br>' +
+        '&bull; <b>Total Lifetime Value (LTV):</b> <b>' + INR(topVal) + '</b><br>' +
+        '&bull; <b>Account Status:</b> <span class="badge ' + (isStatusActive(topStatus) ? 'badge-green' : 'badge-amber') + '">' + escapeHtml(topStatus) + '</span><br>' +
+        '&bull; <b>City / Location:</b> ' + escapeHtml(topCity) + '<br>' +
+        '&bull; <b>Contact Phone:</b> ' + escapeHtml(topPhone) + '<br>' +
+        '&bull; <b>Total Orders:</b> ' + topOrders + ' orders placed<br><br>' +
+        '<b>&#127941; High-Value Customers Leaderboard (Top 5):</b><br><br>' +
+        '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:var(--surface);border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px;">' +
+          '<thead>' +
+            '<tr style="background:var(--bg);text-align:left;font-weight:700;border-bottom:1px solid var(--line);">' +
+              '<th style="padding:8px 10px;">Rank</th>' +
+              '<th style="padding:8px 10px;">Customer Name</th>' +
+              '<th style="padding:8px 10px;text-align:right;">Total Amount</th>' +
+              '<th style="padding:8px 10px;text-align:center;">City</th>' +
+              '<th style="padding:8px 10px;text-align:center;">Status</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>' + topLeaderboard + '</tbody>' +
+        '</table>' +
+        '<button class="btn btn-primary btn-sm" onclick="showPage(\'crm\');closeCopilot();">Open Full CRM Directory &#8594;</button>';
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 7. GENERAL CUSTOMER & CRM OVERVIEW
   // ══════════════════════════════════════════════════════════
   else if(cleanQ.includes('customer') || cleanQ.includes('client') || cleanQ.includes('crm') || cleanQ.includes('ltv') || cleanQ.includes('buyer') || cleanQ.includes('vip')){
     var topClients = (customers||[]).slice().sort(function(a,b){
-      return parseCleanNumber(b.ltv||b.total_amount||0) - parseCleanNumber(a.ltv||a.total_amount||0);
-    }).slice(0, 5).map(function(c){
-      return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(c.name || c.customer_name || 'Client') + '</b> &mdash; LTV: ' + INR(c.ltv||c.total_amount||0) + ' <span class="badge badge-green">Active</span>';
+      return parseCleanNumber(b.ltv||b.total_amount||b.total_purchase_value||0) - parseCleanNumber(a.ltv||a.total_amount||a.total_purchase_value||0);
+    }).slice(0, 5).map(function(c, idx){
+      var cVal = parseCleanNumber(c.ltv||c.total_amount||c.total_purchase_value||0);
+      var cName = c.name || c.customer_name || c['CUSTOMER NAME'] || ('Customer ' + (idx + 1));
+      var cCity = c.city || c.location || c['CITY'] || '';
+      var cStatus = c.status || 'Active';
+      return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(cName) + '</b>' + (cCity ? ' (' + escapeHtml(cCity) + ')' : '') + ' &mdash; LTV: <b>' + INR(cVal) + '</b> <span class="badge ' + (isStatusActive(cStatus) ? 'badge-green' : 'badge-amber') + '">' + escapeHtml(cStatus) + '</span>';
     }).join('<br>');
 
     reply = '&#129309; <b>Customer Accounts &amp; CRM Overview:</b><br><br>' +
       '&bull; <b>Total Customer Accounts:</b> <b>' + totalCust + ' accounts</b><br>' +
-      '&bull; <b>Active Clients:</b> ' + activeCust + '<br>' +
+      '&bull; <b>Active Clients:</b> <b>' + activeCust + '</b><br>' +
       '&bull; <b>Total Customer LTV:</b> <b>' + INR(totalLtv) + '</b><br>' +
       '&bull; <b>Average Lifetime Value:</b> <b>' + INR(avgLtv) + '</b><br><br>' +
       (topClients ? '<b>Top Value Accounts (LTV):</b><br>' + topClients + '<br><br>' : '') +
@@ -9257,10 +9562,10 @@ async function __syncImportHistoryToSupabase(){
 
 function initDefaultSampleData(){
   try {
-    const e = __nativeLocalStorage.getItem('kendra_employees_list'); if(e) employees = JSON.parse(e).filter(x => !isSampleRecord(x));
-    const c = __nativeLocalStorage.getItem('kendra_customers_list'); if(c) customers = JSON.parse(c).filter(x => !isSampleRecord(x));
+    const e = __nativeLocalStorage.getItem('kendra_employees_list'); if(e) employees = JSON.parse(e).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeEmployeeRecord(item, idx));
+    const c = __nativeLocalStorage.getItem('kendra_customers_list'); if(c) customers = JSON.parse(c).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeCustomerRecord(item, idx));
     const p = __nativeLocalStorage.getItem('kendra_products_list'); if(p) products = JSON.parse(p).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeProductRecord(item, idx));
-    const s = __nativeLocalStorage.getItem('kendra_suppliers_list'); if(s) suppliers = JSON.parse(s).filter(x => !isSampleRecord(x));
+    const s = __nativeLocalStorage.getItem('kendra_suppliers_list'); if(s) suppliers = JSON.parse(s).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeSupplierRecord(item, idx));
     const ex = __nativeLocalStorage.getItem('kendra_expenses_list'); if(ex) expenses = JSON.parse(ex).filter(x => !isSampleRecord(x));
     const inv = __nativeLocalStorage.getItem('kendra_invoices_list'); if(inv) invoices = JSON.parse(inv).filter(x => !isSampleRecord(x));
     const t = __nativeLocalStorage.getItem('kendra_tasks_list'); if(t) tasks = JSON.parse(t).filter(x => !isSampleRecord(x));
@@ -9278,16 +9583,16 @@ async function loadAll(){
 
   // Resilient safety net: ensure arrays are never null or empty if localStorage has records
   if(!employees || !employees.length){
-    try{ const e = __nativeLocalStorage.getItem('kendra_employees_list'); if(e) employees = JSON.parse(e).filter(x => !isSampleRecord(x)); }catch(err){}
+    try{ const e = __nativeLocalStorage.getItem('kendra_employees_list'); if(e) employees = JSON.parse(e).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeEmployeeRecord(item, idx)); }catch(err){}
   }
   if(!customers || !customers.length){
-    try{ const c = __nativeLocalStorage.getItem('kendra_customers_list'); if(c) customers = JSON.parse(c).filter(x => !isSampleRecord(x)); }catch(err){}
+    try{ const c = __nativeLocalStorage.getItem('kendra_customers_list'); if(c) customers = JSON.parse(c).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeCustomerRecord(item, idx)); }catch(err){}
   }
   if(!products || !products.length){
     try{ const p = __nativeLocalStorage.getItem('kendra_products_list'); if(p) products = JSON.parse(p).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeProductRecord(item, idx)); }catch(err){}
   }
   if(!suppliers || !suppliers.length){
-    try{ const s = __nativeLocalStorage.getItem('kendra_suppliers_list'); if(s) suppliers = JSON.parse(s).filter(x => !isSampleRecord(x)); }catch(err){}
+    try{ const s = __nativeLocalStorage.getItem('kendra_suppliers_list'); if(s) suppliers = JSON.parse(s).filter(x => !isSampleRecord(x)).map((item, idx) => normalizeSupplierRecord(item, idx)); }catch(err){}
   }
   if(!goodsMovements || !goodsMovements.length){
     try{ const g = __nativeLocalStorage.getItem('kendra_goods_list'); if(g) goodsMovements = JSON.parse(g).filter(x => !isSampleRecord(x)); }catch(err){}
