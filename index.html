@@ -6932,43 +6932,17 @@ function openCopilot(promptText){
     modal.style.display = 'flex';
   }
   var inp = document.getElementById('copilotQueryInput');
-  if(inp){
-    if(promptText){
-      inp.value = promptText;
-      askCopilot();
-    } else {
-      setTimeout(function(){ inp.focus(); }, 100);
-    }
+  if(promptText){
+    if(inp) inp.value = promptText;
+    askCopilot(promptText);
+  } else {
+    setTimeout(function(){ if(inp) inp.focus(); }, 100);
   }
 }
 
 function closeCopilot(){
   var modal = document.getElementById('copilotModal');
   if(modal) modal.style.display = 'none';
-}
-
-function _copilotReply(replyHtml, chat){
-  var tid = 'cpty-' + Date.now();
-  chat.innerHTML +=
-    '<div id="' + tid + '" class="chat-msg bot" style="display:flex;gap:10px;align-items:flex-end;margin:4px 0;">' +
-      '<div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#129302;</div>' +
-      '<div class="chat-bubble bot" style="background:var(--surface);border:1px solid var(--line);padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.6;color:var(--ink-soft);">' +
-        'Kendra AI is analyzing your business data... <span class="typing-dots">&#x2026;</span>' +
-      '</div>' +
-    '</div>';
-  chat.scrollTop = chat.scrollHeight;
-
-  setTimeout(function(){
-    var el = document.getElementById(tid);
-    if(el){
-      el.innerHTML =
-        '<div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#129302;</div>' +
-        '<div class="chat-bubble bot" style="background:var(--surface);border:1px solid var(--line);padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.7;max-width:88%;color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
-          replyHtml +
-        '</div>';
-    }
-    chat.scrollTop = chat.scrollHeight;
-  }, 350);
 }
 
 function _copClean(text){
@@ -6994,39 +6968,34 @@ function _copLev(a, b){
   return d[a.length][b.length];
 }
 
-function _copMatchWord(tok, wordList){
-  for(var i=0; i<wordList.length; i++){
-    var w = wordList[i];
-    if(tok === w) return 10;
-    if(tok.length >= 4 && w.length >= 4){
-      if(tok.startsWith(w) || w.startsWith(tok)) return 7;
-      if(_copLev(tok, w) <= 1) return 6;
-    }
-  }
-  return 0;
+function _copilotReply(replyHtml, chat){
+  if(!chat) chat = document.getElementById('copilotMessages');
+  if(!chat) return;
+
+  var msgDiv = document.createElement('div');
+  msgDiv.className = 'chat-msg bot';
+  msgDiv.style.cssText = 'display:flex;gap:10px;align-items:flex-end;margin:6px 0;';
+  msgDiv.innerHTML =
+    '<div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#129302;</div>' +
+    '<div class="chat-bubble bot" style="background:var(--surface);border:1px solid var(--line);padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.6;color:var(--ink-soft);">' +
+      'Kendra AI is analyzing your business data... <span class="typing-dots">&#x2026;</span>' +
+    '</div>';
+  chat.appendChild(msgDiv);
+  chat.scrollTop = chat.scrollHeight;
+
+  setTimeout(function(){
+    msgDiv.innerHTML =
+      '<div style="width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#129302;</div>' +
+      '<div class="chat-bubble bot" style="background:var(--surface);border:1px solid var(--line);padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.7;max-width:88%;color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
+        replyHtml +
+      '</div>';
+    chat.scrollTop = chat.scrollHeight;
+  }, 120);
 }
 
-function _copScore(tokens, rawQuery, keywordList){
-  var score = 0;
-  var qClean = _copClean(rawQuery);
-  for(var i=0; i<keywordList.length; i++){
-    var kw = keywordList[i].toLowerCase();
-    if(kw.indexOf(' ') > -1){
-      if(qClean.indexOf(kw) > -1) score += 20;
-    } else {
-      for(var j=0; j<tokens.length; j++){
-        var m = _copMatchWord(tokens[j], [kw]);
-        if(m > 0) score += m;
-      }
-    }
-  }
-  return score;
-}
-
-// ── Master Universal askCopilot Engine ──────────────────────────────
 function askCopilot(customQuery){
   var inp = document.getElementById('copilotQueryInput');
-  var query = customQuery || (inp ? inp.value.trim() : '');
+  var query = (customQuery !== undefined && customQuery !== null && String(customQuery).trim() !== '') ? String(customQuery).trim() : (inp ? inp.value.trim() : '');
   if(!query) return;
   if(inp) inp.value = '';
 
@@ -7034,12 +7003,14 @@ function askCopilot(customQuery){
   if(!chat) return;
 
   // Render User Message
-  chat.innerHTML +=
-    '<div class="chat-msg user" style="display:flex;justify-content:flex-end;margin:4px 0;">' +
-      '<div class="chat-bubble user" style="background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;max-width:82%;font-size:13px;line-height:1.5;box-shadow:0 2px 6px rgba(0,0,0,0.1);">' +
-        escapeHtml(query) +
-      '</div>' +
+  var userDiv = document.createElement('div');
+  userDiv.className = 'chat-msg user';
+  userDiv.style.cssText = 'display:flex;justify-content:flex-end;margin:6px 0;';
+  userDiv.innerHTML =
+    '<div class="chat-bubble user" style="background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;max-width:82%;font-size:13px;line-height:1.5;box-shadow:0 2px 6px rgba(0,0,0,0.1);">' +
+      escapeHtml(query) +
     '</div>';
+  chat.appendChild(userDiv);
   chat.scrollTop = chat.scrollHeight;
 
   // 1. Calculate Live Aggregated Real-Time Business Data
@@ -7182,13 +7153,13 @@ function askCopilot(customQuery){
   // ══════════════════════════════════════════════════════════
   else if(cleanQ.includes('inventory summary') || (cleanQ.includes('inventory') && (cleanQ.includes('summary') || cleanQ.includes('overview') || cleanQ.includes('status') || cleanQ.includes('show') || cleanQ.includes('how many products'))) || cleanQ.includes('stock summary') || cleanQ.includes('stock overview') || cleanQ.includes('inventory catalog summary')){
     
-    reply = 'Here is the inventory summary:<br><br>' +
-      '&bull; <b>Total Products:</b> <b>' + totalSkus + '</b><br>' +
-      '&bull; <b>Total Stock Value:</b> <b>' + INR(invValuation) + '</b><br>' +
-      '&bull; <b>Low Stock Items:</b> <b>' + lowStockItems.length + '</b><br>' +
-      '&bull; <b>Out of Stock Items:</b> <b>' + outOfStockItems.length + '</b><br>' +
-      '&bull; <b>Categories:</b> <b>' + categoriesCount + '</b><br><br>' +
-      '<button class="btn btn-primary btn-sm" onclick="showPage(\'inventory\');closeCopilot();">Open Inventory Catalog &#8594;</button>';
+    reply = '&#128230; <b>Inventory &amp; Stock Level Summary:</b><br><br>' +
+      '&bull; <b>Total Products / SKUs:</b> <b>' + totalSkus + ' SKUs (' + totalUnits.toLocaleString('en-IN') + ' total units)</b><br>' +
+      '&bull; <b>Total Stock Valuation:</b> <b>' + INR(invValuation) + '</b><br>' +
+      '&bull; <b>Low Stock Items:</b> <b style="color:' + (lowStockItems.length > 0 ? 'var(--coral)' : 'var(--teal)') + ';">' + lowStockItems.length + ' items below reorder level</b><br>' +
+      '&bull; <b>Out of Stock Items:</b> <b style="color:' + (outOfStockItems.length > 0 ? 'var(--coral)' : 'var(--teal)') + ';">' + outOfStockItems.length + '</b><br>' +
+      '&bull; <b>Product Categories:</b> <b>' + categoriesCount + '</b><br><br>' +
+      '<button class="btn btn-primary btn-sm" onclick="showPage(\'inventory\');closeCopilot();">Open Inventory Management &#8594;</button>';
   }
 
   // ══════════════════════════════════════════════════════════
@@ -9479,7 +9450,7 @@ function openExpenseModal(){ openModal('ocrModal'); }
           &bull; <i>"Which products are below the reorder level?"</i><br>
           &bull; <i>"Who is currently on leave?"</i><br>
           &bull; <i>"Who are our top customers?"</i><br>
-          &bull; <i>"Can you recommend a pizza recipe for tonight?"</i>
+          &bull; <i>"Can you recommend a chicken biryani recipe for tonight?"</i>
         </div>
       </div>
     </div>
@@ -9494,35 +9465,13 @@ function openExpenseModal(){ openModal('ocrModal'); }
 
   </div>
 </div>
-      <span class="modal-close" style="color:#fff;font-size:20px;cursor:pointer;" onclick="closeCopilot()">&times;</span>
-    </div>
-    <div id="copilotMessages" style="flex:1;padding:20px;overflow-y:auto;background:var(--bg);display:flex;flex-direction:column;gap:12px;">
-      <div class="chat-msg bot">
-        <div class="chat-bubble bot" style="background:var(--card-bg);border:1px solid var(--line);padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.5;">
-          &#128075; Hello! I am your <b>Kendra AI Copilot</b>.<br>
-          I am connected to your live business operating data.<br><br>
-          Ask me questions like:<br>
-          &bull; <i>"How is my business doing?"</i><br>
-          &bull; <i>"What is our revenue and net profit?"</i><br>
-          &bull; <i>"List all employees and who is on leave"</i><br>
-          &bull; <i>"Which items are low in stock?"</i><br>
-          &bull; <i>"Show overdue invoices"</i>
-        </div>
-      </div>
-    </div>
-    <div style="padding:14px;background:var(--card-bg);border-top:1px solid var(--line);display:flex;gap:8px;">
-      <input id="copilotQueryInput" placeholder="Ask AI Copilot anything..." style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--line);font-size:13px;" onkeydown="if(event.key===&#39;Enter&#39;)askCopilot()">
-      <button class="btn btn-primary" onclick="askCopilot()" style="padding:10px 16px;font-size:13px;font-weight:700;">Ask AI</button>
-    </div>
-  </div>
-</div>
 
 <!-- Smart Invoice Modal -->
 <div class="modal-overlay" id="smartInvoiceModal">
   <div class="modal" style="max-width:640px;width:95%;">
     <div class="modal-head">
       <span class="modal-title">&#129534; Create New Invoice</span>
-      <span class="modal-close" onclick="closeModal(&#39;smartInvoiceModal&#39;)">&times;</span>
+      <span class="modal-close" onclick="closeModal('smartInvoiceModal')">&times;</span>
     </div>
     <div class="form-row">
       <label>Customer</label>
@@ -9558,51 +9507,11 @@ function openExpenseModal(){ openModal('ocrModal'); }
       <textarea id="sinvNotes" rows="2" placeholder="Payment terms, special instructions..." style="width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:13px;resize:vertical;"></textarea>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
-      <button class="btn btn-ghost" onclick="closeModal(&#39;smartInvoiceModal&#39;)">Cancel</button>
+      <button class="btn btn-ghost" onclick="closeModal('smartInvoiceModal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveAndSendInvoice()">&#128190; Save &amp; Generate Invoice</button>
     </div>
   </div>
 </div>
 
-
-<!-- ============ AI COPILOT SLIDE-OUT DRAWER ============ -->
-<div id="copilotDrawer" class="copilot-drawer-overlay" style="display:none;position:fixed;top:0;right:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);z-index:9999;justify-content:flex-end;" onclick="if(event.target===this)closeCopilot()">
-  <div class="copilot-drawer-panel" style="width:440px;max-width:92vw;height:100vh;background:#FAF9F5;border-left:1px solid var(--line);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;box-sizing:border-box;">
-    <!-- Drawer Header -->
-    <div style="padding:18px 20px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:36px;height:36px;border-radius:10px;background:var(--teal-soft);color:var(--teal-dark);display:flex;align-items:center;justify-content:center;font-size:18px;">&#10024;</div>
-        <div>
-          <div style="font-weight:700;font-size:15px;color:var(--ink);">Kendra AI Copilot</div>
-          <div style="font-size:11.5px;color:var(--ink-faint);">Live Business Intelligence &amp; Operations</div>
-        </div>
-      </div>
-      <button class="icon-action" style="font-size:18px;border:none;background:none;cursor:pointer;" onclick="closeCopilot()">&times;</button>
-    </div>
-
-    <!-- Quick Prompts / Chips -->
-    <div style="padding:10px 14px;background:#F5F4EF;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;flex-shrink:0;">
-      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;Show revenue &amp; profit snapshot&#39;)">&#128202; Financials</button>
-      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;Show low stock alert items&#39;)">&#128230; Low Stock</button>
-      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;List employee workforce status&#39;)">&#128101; Workforce</button>
-      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;white-space:nowrap;background:#fff;padding:4px 10px;" onclick="askCopilot(&#39;Show top customers by LTV&#39;)">&#129309; Customers</button>
-    </div>
-
-    <!-- Message Stream -->
-    <div id="copilotDrawerMessages" style="flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;">
-      <div style="background:#fff;border:1px solid var(--line);padding:14px;border-radius:10px;font-size:13px;color:var(--ink);line-height:1.5;">
-        &#128075; <b>Hello! I am your Kendra AI Assistant.</b><br>
-        Ask me anything about your revenue, overdue invoices, stock levels, staff attendance, customer LTV, or data imports.
-      </div>
-    </div>
-
-    <!-- Input Footer -->
-    <div style="padding:14px 16px;background:#fff;border-top:1px solid var(--line);display:flex;gap:8px;flex-shrink:0;">
-      <input id="copilotDrawerInput" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;" placeholder="Ask Copilot a question..." onkeydown="if(event.key===&#39;Enter&#39;)sendCopilotMsg()">
-      <button class="btn btn-primary" onclick="sendCopilotMsg()" style="padding:10px 16px;">Send</button>
-    </div>
-  </div>
-</div>
-
-
-</body></html>
+</body>
+</html>
