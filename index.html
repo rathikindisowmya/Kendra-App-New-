@@ -4215,6 +4215,75 @@ function escapeHtml(str){
     .replace(/'/g, '&#039;');
 }
 
+function getFieldTokens(colKey){
+  if(!colKey) return [];
+  const s = String(colKey).replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+  const tokens = (s.match(/[a-zA-Z0-9]+/g) || []).map(t => t.toLowerCase());
+  return tokens;
+}
+
+function isStatusKey(colKey){
+  if(!colKey) return false;
+  const tokens = getFieldTokens(colKey);
+  const joined = tokens.join('');
+  return tokens.some(t => ['status', 'state', 'stage', 'condition', 'warranty'].includes(t)) ||
+         ['status', 'stockstatus', 'paymentstatus', 'orderstatus', 'categorystatus'].includes(joined);
+}
+
+function isDateKey(colKey){
+  if(!colKey) return false;
+  const tokens = getFieldTokens(colKey);
+  const joined = tokens.join('');
+  const dateWords = ['date', 'dob', 'dateofbirth', 'birthdate', 'joining', 'joined', 'hiredate', 'expiry', 'expiration', 'duedate', 'issuedate', 'purchasedate', 'servicedate', 'orderdate', 'restockdate', 'createdat', 'updatedat', 'timestamp', 'movementdate', 'anniversary'];
+  if(tokens.some(t => dateWords.includes(t))) return true;
+  if(tokens.some(t => t.endsWith('date') || t.endsWith('dob'))) return true;
+  if(dateWords.includes(joined)) return true;
+  return false;
+}
+
+function isMonetaryKey(colKey){
+  if(!colKey) return false;
+  if(isDateKey(colKey) || isStatusKey(colKey)) return false;
+  const tokens = getFieldTokens(colKey);
+  const joined = tokens.join('');
+  const moneyWords = ['amount', 'price', 'cost', 'salary', 'ltv', 'lifetimevalue', 'outstanding', 'balance', 'payable', 'payables', 'spend', 'revenue', 'subtotal', 'discount', 'taxamount', 'mrp', 'rate', 'wage', 'fee', 'grandtotal', 'totalpurchasevalue', 'stockvalue', 'paidamount', 'dueamount'];
+  if(tokens.some(t => moneyWords.includes(t))){
+    if(tokens.some(t => ['id', 'count', 'pct', 'percent', 'percentage', 'days', 'no', 'num', 'number'].includes(t))){
+      if(!['taxamount', 'paidamount', 'dueamount', 'totalamount', 'netamount', 'grossamount', 'unitprice', 'sellingprice', 'unitcost', 'costprice', 'totalpurchasevalue', 'stockvalue'].includes(joined)){
+        return false;
+      }
+    }
+    return true;
+  }
+  if(moneyWords.includes(joined)) return true;
+  if(joined.includes('salary') || joined.includes('totalpurchasevalue') || joined.includes('stockvalue')) return true;
+  return false;
+}
+
+function isCountOrQuantityKey(colKey){
+  if(!colKey) return false;
+  if(isDateKey(colKey) || isMonetaryKey(colKey) || isStatusKey(colKey)) return false;
+  const tokens = getFieldTokens(colKey);
+  const joined = tokens.join('');
+  const countWords = ['qty', 'quantity', 'stock', 'units', 'orders', 'totalorders', 'ordercount', 'reorder', 'attendance', 'leavebalance', 'creditdays', 'rating', 'headcount', 'count', 'age', 'items', 'visits', 'days'];
+  if(tokens.some(t => countWords.includes(t))) return true;
+  if(countWords.includes(joined)) return true;
+  return false;
+}
+
+function isIdentifierOrContactKey(colKey){
+  if(!colKey) return false;
+  if(isDateKey(colKey) || isMonetaryKey(colKey) || isCountOrQuantityKey(colKey) || isStatusKey(colKey)) return false;
+  const tokens = getFieldTokens(colKey);
+  const joined = tokens.join('');
+  const idWords = ['id', 'sku', 'code', 'pin', 'pincode', 'zip', 'zipcode', 'pan', 'aadhaar', 'imei', 'hsn', 'sac', 'vin', 'gst', 'gstin', 'phone', 'mobile', 'contact', 'invoiceno', 'ponumber', 'orderno', 'vehicleno', 'vehiclenumber'];
+  if(tokens.some(t => idWords.includes(t))) return true;
+  if(tokens.some(t => t.endsWith('id') || t.endsWith('sku') || t.endsWith('code') || t.endsWith('pin'))) return true;
+  if(idWords.includes(joined)) return true;
+  return false;
+}
+
+
 function normalizeDateUniversal(val){
   if(val === undefined || val === null || val === '') return '';
   if(val instanceof Date && !isNaN(val.getTime())){
@@ -4621,117 +4690,59 @@ function showPage(pageId){
 function formatExcelCell(val, colKey){
   if(val === undefined || val === null || String(val).trim() === '') return '-';
   const strVal = String(val).trim();
-  if(strVal === '-' || strVal === 'N/A' || strVal === 'None') return '-';
+  if(strVal === '-' || strVal === 'N/A' || strVal === 'None' || strVal === 'null' || strVal === 'undefined') return '-';
 
-  const lowerKey = (colKey || '').toLowerCase().trim();
-
-  // If the key is a name, title, description, notes, address, code, SKU, or email -> ALWAYS TEXT
-  const isExplicitText = lowerKey.includes('name') || 
-                         lowerKey.includes('desc') || 
-                         lowerKey.includes('title') || 
-                         lowerKey.includes('note') || 
-                         lowerKey.includes('address') || 
-                         lowerKey.includes('email') || 
-                         lowerKey.includes('comment') || 
-                         lowerKey.includes('spec') || 
-                         lowerKey.includes('detail') || 
-                         lowerKey.includes('sku') || 
-                         lowerKey.includes('code') || 
-                         lowerKey.includes('location') || 
-                         lowerKey.includes('supplier') || 
-                         lowerKey.includes('vendor') || 
-                         lowerKey.includes('person') || 
-                         lowerKey.includes('city') || 
-                         lowerKey.includes('state') || 
-                         lowerKey.includes('guideline');
-
-  if(isExplicitText && !lowerKey.includes('date')){
-    return escapeHtml(strVal);
-  }
-
-  // 1. Date formatting (Handles all Excel serials, ISO timestamps, DD/MM/YYYY, MM/DD/YYYY)
-  const isDateColumn = lowerKey.includes('date') || 
-                       lowerKey.includes('dob') || 
-                       lowerKey.includes('joining') || 
-                       lowerKey.includes('joined') || 
-                       lowerKey.includes('hired') || 
-                       lowerKey.includes('born') || 
-                       lowerKey.includes('expiry') || 
-                       lowerKey.includes('due') || 
-                       lowerKey.includes('timestamp') || 
-                       lowerKey.includes('created') || 
-                       lowerKey.includes('updated') || 
-                       lowerKey.includes('period') || 
-                       lowerKey.includes('restock');
-
-  if(isDateColumn || /^\d{4}-\d{2}-\d{2}/.test(strVal) || /^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(strVal) || (/^\d{5}$/.test(strVal) && Number(strVal) >= 20000 && Number(strVal) <= 75000)){
-    const normalized = normalizeDateUniversal(strVal);
-    if(normalized && /^\d{4}-\d{2}-\d{2}$/.test(normalized)){
-      return normalized;
+  // 1. Status badges
+  if(isStatusKey(colKey)){
+    const lowerVal = strVal.toLowerCase();
+    if(lowerVal.includes('active') || lowerVal.includes('valid') || lowerVal.includes('paid') || lowerVal.includes('success') || lowerVal.includes('yes') || lowerVal.includes('healthy') || lowerVal.includes('in stock') || lowerVal.includes('completed')){
+      return '<span class="badge badge-green">' + escapeHtml(strVal) + '</span>';
+    }
+    if(lowerVal.includes('pending') || lowerVal.includes('due') || lowerVal.includes('lead') || lowerVal.includes('review') || lowerVal.includes('low') || lowerVal.includes('draft')){
+      return '<span class="badge badge-amber">' + escapeHtml(strVal) + '</span>';
+    }
+    if(lowerVal.includes('overdue') || lowerVal.includes('inactive') || lowerVal.includes('expired') || lowerVal.includes('rejected') || lowerVal.includes('no') || lowerVal.includes('out of stock') || lowerVal.includes('cancelled')){
+      return '<span class="badge badge-red">' + escapeHtml(strVal) + '</span>';
     }
   }
 
-  // 2. Explicit Numeric / Quantity / Order Count Columns -> ALWAYS PURE NUMBER (NOT RUPEES)
-  const isCountOrOrder = lowerKey === 'quantity' || 
-                         lowerKey === 'qty' || 
-                         lowerKey === 'stock' || 
-                         lowerKey === 'units' || 
-                         lowerKey === 'orders' || 
-                         lowerKey === 'total orders' || 
-                         lowerKey === 'count' || 
-                         lowerKey === 'headcount' || 
-                         lowerKey.includes('quantity') || 
-                         lowerKey.includes('qty') || 
-                         lowerKey.includes('reorder') || 
-                         (lowerKey.includes('stock') && !lowerKey.includes('cost')) || 
-                         (lowerKey.includes('order') && !lowerKey.includes('id') && !lowerKey.includes('no'));
+  // 2. Explicit Identifiers & Contact Codes -> ALWAYS PURE UNMODIFIED STRING
+  if(isIdentifierOrContactKey(colKey)){
+    return escapeHtml(strVal);
+  }
 
-  if(isCountOrOrder){
+  // 3. Date formatting -> ONLY WHEN COLUMN IS AN ACTUAL DATE KEY OR JS DATE OBJECT
+  if(isDateKey(colKey) || (typeof val === 'object' && val instanceof Date)){
+    const normalized = normalizeDateUniversal(val);
+    if(normalized) return escapeHtml(normalized);
+  }
+
+  // 4. Monetary / Currency formatting (`₹`) -> ONLY FOR MONETARY FIELDS
+  if(isMonetaryKey(colKey)){
+    const cleanNum = Number(strVal.replace(/[^0-9.-]/g, ''));
+    if(!isNaN(cleanNum) && !/[a-zA-Z]/.test(strVal.replace(/^(&#8377;|rs\.?|inr)\s*/i, '')) && !strVal.startsWith('+')){
+      return '<b>' + INR(cleanNum) + '</b>';
+    }
+    return escapeHtml(strVal);
+  }
+
+  // 5. Quantity / Count / Numeric formatting -> PURE NUMBER (NOT RUPEES, NOT DATES)
+  if(isCountOrQuantityKey(colKey)){
     const cleanNum = Number(strVal.replace(/[^0-9.-]/g, ''));
     if(!isNaN(cleanNum) && !/[a-zA-Z]/.test(strVal) && !strVal.startsWith('+') && !strVal.startsWith('00')){
+      const lowerKey = String(colKey).toLowerCase();
+      if(lowerKey.includes('attendance') || lowerKey.includes('pct') || lowerKey.includes('percent')){
+        return cleanNum + '%';
+      }
+      if(lowerKey.includes('rating')){
+        return cleanNum.toFixed(1);
+      }
       return '<b>' + cleanNum.toLocaleString('en-IN') + '</b>';
     }
     return escapeHtml(strVal);
   }
 
-  // 3. Currency formatting (ONLY for monetary fields)
-  const isMonetary = lowerKey.includes('price') || 
-                     lowerKey.includes('salary') || 
-                     lowerKey.includes('amount') || 
-                     lowerKey.includes('ltv') || 
-                     lowerKey.includes('deal') || 
-                     lowerKey.includes('cost') || 
-                     lowerKey.includes('revenue') || 
-                     lowerKey.includes('balance') || 
-                     lowerKey.includes('payables') || 
-                     lowerKey.includes('fee') || 
-                     lowerKey.includes('wage') || 
-                     lowerKey.includes('spend') || 
-                     lowerKey.includes('rate') || 
-                     lowerKey.includes('mrp') || 
-                     (lowerKey.includes('total') && (lowerKey.includes('val') || lowerKey.includes('amt') || lowerKey.includes('pay') || lowerKey.includes('rev') || lowerKey.includes('exp') || lowerKey.includes('spend') || lowerKey.includes('bill')));
-
-  if(isMonetary){
-    const cleanNum = Number(strVal.replace(/[^0-9.-]/g, ''));
-    if(!isNaN(cleanNum) && !/[a-zA-Z]/.test(strVal.replace(/^(&#8377;|rs\.?|inr)\s*/i, '')) && cleanNum > 0 && !strVal.startsWith('+')){
-      return '<b>' + INR(cleanNum) + '</b>';
-    }
-  }
-
-  // 4. Status badges
-  if(lowerKey === 'status' || lowerKey.includes('status') || lowerKey.includes('state') || lowerKey.includes('warranty')){
-    const lowerVal = strVal.toLowerCase();
-    if(lowerVal.includes('active') || lowerVal.includes('valid') || lowerVal.includes('paid') || lowerVal.includes('success') || lowerVal.includes('yes') || lowerVal.includes('healthy') || lowerVal.includes('in stock')){
-      return '<span class="badge badge-green">' + escapeHtml(strVal) + '</span>';
-    }
-    if(lowerVal.includes('pending') || lowerVal.includes('due') || lowerVal.includes('lead') || lowerVal.includes('review') || lowerVal.includes('low')){
-      return '<span class="badge badge-amber">' + escapeHtml(strVal) + '</span>';
-    }
-    if(lowerVal.includes('overdue') || lowerVal.includes('inactive') || lowerVal.includes('expired') || lowerVal.includes('rejected') || lowerVal.includes('no') || lowerVal.includes('out of stock')){
-      return '<span class="badge badge-red">' + escapeHtml(strVal) + '</span>';
-    }
-  }
-
+  // 6. Default Text formatting
   return escapeHtml(strVal);
 }
 
@@ -4750,7 +4761,7 @@ function getRowValueByColumnKey(item, colKey){
     }
   }
 
-  // Semantic fallbacks for common columns
+  // Semantic fallbacks for all Kendra ERP columns
   if (lowerCol === 'customerid' || lowerCol.includes('customerid')) {
     return item['CUSTOMER ID'] || item['Customer ID'] || item['CUSTOMER_ID'] || item._displayId || item.original_id || (!__isUuid(item.id) ? item.id : '') || item.id || '';
   }
@@ -4766,7 +4777,7 @@ function getRowValueByColumnKey(item, colKey){
   if (lowerCol.includes('name') || lowerCol.includes('product') || lowerCol.includes('item') || lowerCol.includes('title')) {
     return item.name || item['PRODUCT NAME'] || item['ITEM NAME'] || item['PRODUCT_NAME'] || item['ITEM_NAME'] || item.title || item.product || '';
   }
-  if (lowerCol.includes('sku') || lowerCol.includes('code') || lowerCol.includes('barcode') || lowerCol.includes('id')) {
+  if (lowerCol.includes('sku') || lowerCol.includes('barcode') || lowerCol.includes('hsn') || lowerCol.includes('code')) {
     return item.sku || item['SKU'] || item['ITEM CODE'] || item['PRODUCT ID'] || item._displayId || item.original_id || (!__isUuid(item.id) ? item.id : '') || item.id || '';
   }
   if (lowerCol.includes('age')) {
@@ -4778,8 +4789,14 @@ function getRowValueByColumnKey(item, colKey){
   if (lowerCol.includes('vehicle')) {
     return item[colKey] || item['VEHICLE NUMBER'] || item['Vehicle Number'] || item['VEHICLE_NUMBER'] || item['Vehicle'] || '';
   }
-  if (lowerCol.includes('tyre') || lowerCol.includes('tire')) {
-    return item[colKey] || item['TYRE BRAND'] || item['TYRE SIZE'] || item['Tyre Brand'] || item['Tyre Size'] || '';
+  if (lowerCol.includes('brand') || lowerCol.includes('tyre') || lowerCol.includes('tire')) {
+    return item[colKey] || item['TYRE BRAND'] || item['TYRE SIZE'] || item['Tyre Brand'] || item['Tyre Size'] || item.brand || item.tyre_brand || '';
+  }
+  if (lowerCol.includes('purchasedate') || lowerCol.includes('lastorder') || lowerCol.includes('orderdate') || lowerCol.includes('restock')) {
+    return item.purchase_date || item.last_order_date || item.last_restock_date || item['PURCHASE DATE'] || item['Purchase Date'] || item['Last Order Date'] || item['LAST ORDER DATE'] || item['Last Restock Date'] || '';
+  }
+  if (lowerCol.includes('dob') || lowerCol.includes('birth')) {
+    return item.dob || item['DOB'] || item['Date of Birth'] || item['DATE OF BIRTH'] || item.birth_date || '';
   }
   if (lowerCol.includes('join') || lowerCol.includes('hire') || lowerCol.includes('start')) {
     return item.join_date || item['JOIN DATE'] || item['Join Date'] || item['JOINING DATE'] || item['Hired Date'] || '';
@@ -4787,8 +4804,17 @@ function getRowValueByColumnKey(item, colKey){
   if (lowerCol.includes('category') || lowerCol.includes('dept') || lowerCol.includes('type')) {
     return item.category || item.department || item['CATEGORY'] || item['DEPARTMENT'] || '';
   }
-  if (lowerCol.includes('stock') || lowerCol.includes('qty') || lowerCol.includes('quantity') || lowerCol.includes('units')) {
-    return item.stock !== undefined ? item.stock : (item['STOCK'] ?? item['QUANTITY'] ?? item['QTY'] ?? '');
+  if (lowerCol.includes('totalpurchase') || lowerCol.includes('purchaseval') || lowerCol.includes('payables') || lowerCol.includes('payable') || lowerCol.includes('outstanding') || lowerCol.includes('balance')) {
+    return item.total_purchase_value !== undefined ? item.total_purchase_value : (item['TOTAL PURCHASE VALUE'] ?? item['Total Purchase Value'] ?? item.payables ?? item.outstanding ?? item.balance ?? item.total_amount ?? '');
+  }
+  if (lowerCol.includes('totalamount') || lowerCol.includes('grandtotal') || lowerCol.includes('netamount')) {
+    return item.total_amount !== undefined ? item.total_amount : (item['TOTAL AMOUNT'] ?? item['Total Amount'] ?? item.amount ?? item.total_purchase_value ?? '');
+  }
+  if (lowerCol.includes('totalorders') || lowerCol.includes('ordercount') || lowerCol.includes('orders') || lowerCol.includes('visits')) {
+    return item.total_orders !== undefined ? item.total_orders : (item['TOTAL ORDERS'] ?? item['Total Orders'] ?? item.orders ?? item.visits ?? '');
+  }
+  if (lowerCol.includes('currentstock') || lowerCol.includes('openingstock') || lowerCol.includes('stock') || lowerCol.includes('qty') || lowerCol.includes('quantity') || lowerCol.includes('units')) {
+    return item.stock !== undefined ? item.stock : (item['STOCK'] ?? item['QUANTITY'] ?? item['QTY'] ?? item['CURRENT STOCK'] ?? item['OPENING STOCK'] ?? '');
   }
   if (lowerCol.includes('reorder') || lowerCol.includes('min')) {
     return item.min_stock !== undefined ? item.min_stock : (item['MIN_STOCK'] ?? item['MIN REORDER LEVEL'] ?? '');
@@ -4810,6 +4836,18 @@ function getRowValueByColumnKey(item, colKey){
   }
   if (lowerCol.includes('email')) {
     return item.email || item['EMAIL'] || '';
+  }
+  if (lowerCol.includes('gst')) {
+    return item.gst_number || item.gst || item['GST NUMBER'] || item['GSTIN'] || item['GST Number'] || item['GST'] || '';
+  }
+  if (lowerCol.includes('credit')) {
+    return item.credit_days !== undefined ? item.credit_days : (item['CREDIT DAYS'] ?? item['Credit Days'] ?? item['Credit Period'] ?? item.credit_period ?? '');
+  }
+  if (lowerCol.includes('rating')) {
+    return item.rating !== undefined ? item.rating : (item['RATING'] ?? item['Rating'] ?? '');
+  }
+  if (lowerCol.includes('attendance') || lowerCol.includes('att')) {
+    return item.attendance_pct !== undefined ? item.attendance_pct : (item['ATTENDANCE'] ?? item['Attendance'] ?? item['Attendance Pct'] ?? item.attendance ?? '');
   }
   if (lowerCol.includes('salary') || lowerCol.includes('wage')) {
     return item.salary || item['SALARY'] || item['MONTHLY SALARY'] || '';
@@ -8487,13 +8525,11 @@ function readImportFile(file){
         return;
       }
 
-            // Normalise date values across every imported row
-      const dateCols = /date|dob|joining|joined|hired|born|start|end|expiry|due|invoice|period|month|year|restock|timestamp|created|updated/i;
-
+                  // Normalise ONLY genuine date columns across every imported row
       json = json.map(row => {
         const out = {};
         for(const [k, v] of Object.entries(row)){
-          if(dateCols.test(k) || (/^\d{5}$/.test(String(v).trim()) && Number(v) >= 20000 && Number(v) <= 75000)){
+          if(isDateKey(k)){
             out[k] = normalizeDateUniversal(v);
           } else {
             out[k] = v;
@@ -8606,7 +8642,7 @@ function commitImport(){
   // Normalise every imported record &mdash; maps Excel aliases like "CUSTOMER NAME",
   // "Monthly Salary", "Client Name" &#8594; the canonical DB field names ("name", "salary", &mdash;)
   // and preserves the explicit spreadsheet ID (e.g. C001, EMP1000, S001).
-  const normalizeImport = (records) =>
+    const normalizeImport = (records) =>
     records.map((r, idx) => {
       const c = {...r};
       const explicitId = c['CUSTOMER ID'] || c['Customer ID'] || c['EMPLOYEE ID'] || c['Employee ID'] || c['SUPPLIER ID'] || c['Supplier ID'] || c['PRODUCT ID'] || c['Product ID'] || c['ID'] || c['Id'] || c.id;
@@ -8617,6 +8653,14 @@ function commitImport(){
       } else if(!c.id){
         c.id = type.slice(0,4) + '-' + Date.now() + '-' + idx;
       }
+      
+      // Normalize ONLY genuine date fields in record
+      Object.keys(c).forEach(k => {
+        if(isDateKey(k) && c[k]){
+          c[k] = normalizeDateUniversal(c[k]);
+        }
+      });
+
       syncEntityAliases(c);
       return c;
     });
