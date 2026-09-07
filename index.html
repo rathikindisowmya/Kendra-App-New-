@@ -4552,6 +4552,16 @@ function normalizeProductRecord(p, index = 0){
   };
 }
 
+function isNumericValue(v){
+  if(v === null || v === undefined || v === '') return false;
+  const s = String(v).trim();
+  if(!s || s === '-' || s.toLowerCase() === 'n/a' || s.toLowerCase() === 'null') return false;
+  if(s.startsWith('+') || s.startsWith('00')) return false;
+  const stripped = s.replace(/[\s₹$INRrsRs,_%]/gi, '');
+  if(!stripped || isNaN(Number(stripped))) return false;
+  return /\d/.test(stripped);
+}
+
 let currentSortState = {};
 
 function sortDynamicData(entityName, colKey){
@@ -4561,31 +4571,53 @@ function sortDynamicData(entityName, colKey){
   const currentDir = currentSortState[entityName + '_' + colKey] === 'asc' ? 'desc' : 'asc';
   currentSortState[entityName + '_' + colKey] = currentDir;
 
+  const lowerCol = (colKey || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const isStatusCol = isStatusKey(colKey) || lowerCol.includes('status') || lowerCol === 'state' || lowerCol === 'stage';
+  const isDateCol = isDateKey(colKey) || lowerCol.includes('date') || lowerCol.includes('dob') || lowerCol.includes('joining') || lowerCol.includes('joined');
+
   dataset.sort((a, b) => {
-    let valA = a[colKey] !== undefined ? a[colKey] : (a[colKey.toLowerCase()] !== undefined ? a[colKey.toLowerCase()] : '');
-    let valB = b[colKey] !== undefined ? b[colKey] : (b[colKey.toLowerCase()] !== undefined ? b[colKey.toLowerCase()] : '');
+    let valA = isStatusCol ? getEntityStatus(a) : getRowValueByColumnKey(a, colKey);
+    let valB = isStatusCol ? getEntityStatus(b) : getRowValueByColumnKey(b, colKey);
 
-    const numA = Number(String(valA).replace(/[^0-9.-]/g, ''));
-    const numB = Number(String(valB).replace(/[^0-9.-]/g, ''));
+    const emptyA = valA === undefined || valA === null || String(valA).trim() === '' || String(valA).trim() === '-';
+    const emptyB = valB === undefined || valB === null || String(valB).trim() === '' || String(valB).trim() === '-';
 
-    if(!isNaN(numA) && !isNaN(numB) && String(valA).trim() !== '' && String(valB).trim() !== '' && !String(valA).startsWith('+')){
+    if(emptyA && emptyB) return 0;
+    if(emptyA) return 1;
+    if(emptyB) return -1;
+
+    if(isDateCol){
+      const dateA = normalizeDateUniversal(valA);
+      const dateB = normalizeDateUniversal(valB);
+      if(dateA && dateB){
+        return currentDir === 'asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
+      }
+    }
+
+    if(isNumericValue(valA) && isNumericValue(valB)){
+      const numA = parseCleanNumber(valA);
+      const numB = parseCleanNumber(valB);
       return currentDir === 'asc' ? numA - numB : numB - numA;
     }
 
-    const strA = String(valA).toLowerCase();
-    const strB = String(valB).toLowerCase();
-    if(strA < strB) return currentDir === 'asc' ? -1 : 1;
-    if(strA > strB) return currentDir === 'asc' ? 1 : -1;
-    return 0;
+    const strA = String(valA).trim().toLowerCase();
+    const strB = String(valB).trim().toLowerCase();
+    return currentDir === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
   });
 
   setEntityDataset(entityName, dataset);
 
-  if(entityName === 'products') renderInv();
+  try {
+    const listKey = 'kendra_' + (entityName === 'inventory' ? 'products' : entityName) + '_list';
+    localStorage.setItem(listKey, JSON.stringify(dataset));
+  } catch(e){}
+
+  if(entityName === 'products' || entityName === 'inventory') renderInv();
   else if(entityName === 'customers') renderCust();
   else if(entityName === 'employees') renderEmp();
   else if(entityName === 'suppliers') renderSuppliers();
-  else if(entityName === 'goodsMovements') renderGoodsMovements();
+  else if(entityName === 'goodsMovements' || entityName === 'goods') renderGoodsMovements();
+  else if(entityName === 'expenses' || entityName === 'invoices') renderFinance();
 
   showToast('Sorted by ' + formatColumnHeader(colKey) + ' (' + currentDir.toUpperCase() + ')');
 }
@@ -5034,7 +5066,10 @@ function renderDynamicTable(config){
 
     excelColumns.forEach(colKey => {
       const label = formatColumnHeader(colKey);
-      headHtml += '<th class="sortable" style="cursor:pointer;" onclick="sortDynamicData(\'' + entityName + '\', \'' + escapeHtml(colKey) + '\')">' + escapeHtml(label) + ' <span class="arrow">&#9650;</span></th>';
+      const isSorted = currentSortState[entityName + '_' + colKey];
+      const arrow = isSorted === 'asc' ? '&#9650;' : (isSorted === 'desc' ? '&#9660;' : '&#8645;');
+      const activeClass = isSorted ? ' sorted-active' : '';
+      headHtml += '<th class="sortable' + activeClass + '" style="cursor:pointer;" onclick="sortDynamicData(\'' + entityName + '\', \'' + escapeHtml(colKey) + '\')">' + escapeHtml(label) + ' <span class="arrow">' + arrow + '</span></th>';
     });
 
     headHtml += '<th style="text-align:right;">Actions</th>';
@@ -5154,10 +5189,10 @@ function getEntityFields(entityName){
 
   if(!excelColumns.length){
     const defaultFieldMap = {
-      'employees': ['name', 'department', 'role', 'salary', 'phone', 'email', 'attendance_pct', 'notes'],
-      'customers': ['name', 'phone', 'email', 'city', 'ltv', 'outstanding', 'address', 'followup_date', 'notes'],
-      'products': ['name', 'sku', 'category', 'price', 'cost', 'stock', 'min_stock', 'supplier', 'warehouse', 'notes'],
-      'suppliers': ['name', 'contact_person', 'phone', 'email', 'gst', 'payment_terms', 'rating', 'address', 'supplied_products', 'notes'],
+      'employees': ['name', 'department', 'role', 'salary', 'phone', 'email', 'status', 'join_date', 'attendance_pct', 'notes'],
+      'customers': ['name', 'phone', 'email', 'city', 'status', 'ltv', 'outstanding', 'address', 'followup_date', 'notes'],
+      'products': ['name', 'sku', 'category', 'price', 'cost', 'stock', 'min_stock', 'status', 'supplier', 'warehouse', 'notes'],
+      'suppliers': ['name', 'contact_person', 'phone', 'email', 'status', 'gst', 'payment_terms', 'rating', 'address', 'supplied_products', 'notes'],
       'goodsMovements': ['product_name', 'type', 'quantity', 'from_location', 'to_location', 'reference', 'notes']
     };
     excelColumns = defaultFieldMap[entityName] || ['name'];
@@ -5240,8 +5275,9 @@ function openDynamicRowEditor(entityName, id){
         statusOptions.unshift(val);
       }
 
+      const currentStatus = (isStatusField ? getEntityStatus(item) : '') || val;
       const optionsHtml = statusOptions.map(opt => {
-        const isSel = (val && opt.toLowerCase() === val.toLowerCase()) || (!val && opt.toLowerCase() === 'active');
+        const isSel = (currentStatus && opt.toLowerCase() === currentStatus.toLowerCase()) || (!currentStatus && opt.toLowerCase() === 'active');
         return '<option value="' + escapeHtml(opt) + '"' + (isSel ? ' selected' : '') + '>' + escapeHtml(opt) + '</option>';
       }).join('');
 
@@ -5409,11 +5445,19 @@ function syncEntityAliases(rec){
   const nameVal = rec.name || rec['NAME'] || rec['EMPLOYEE NAME'] || rec['Employee Name'] || rec['CUSTOMER NAME'] || rec['Customer Name'] || rec['SUPPLIER NAME'] || rec['Supplier Name'] || rec['PRODUCT NAME'] || rec['Product Name'] || rec['Product Title'] || rec['Client Name'] || rec['Vendor Name'] || rec['ITEM NAME'] || rec['ITEM'];
   if(nameVal) rec.name = String(nameVal).trim();
 
-  // Status aliases -> dynamically find and sync
+  // Status aliases -> dynamically find and sync across all keys
   const statusVal = getEntityStatus(rec);
-  if(statusVal) rec.status = String(statusVal).trim();
+  if(statusVal) {
+    rec.status = String(statusVal).trim();
+    for(const k of Object.keys(rec)){
+      if(k === 'id' || k === '_rowId' || k === 'original_id' || k === '_displayId') continue;
+      const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if(cleanK === 'status' || cleanK === 'employeestatus' || cleanK === 'supplierstatus' || cleanK === 'customerstatus' || cleanK === 'stockstatus' || cleanK === 'accountstatus' || cleanK === 'paymentstatus' || cleanK === 'orderstatus' || cleanK === 'employmentstatus' || cleanK === 'state' || cleanK === 'stage'){
+        rec[k] = rec.status;
+      }
+    }
+  }
 
-  // Join Date / Date of Joining aliases
   const joinVal = rec.join_date || rec['JOIN DATE'] || rec['Join Date'] || rec['JOINING DATE'] || rec['Joining Date'] || rec['Date of Joining'] || rec['DATE OF JOINING'] || rec['HIRE DATE'] || rec['Hire Date'] || rec['Start Date'];
   if(joinVal){
     const normJoin = normalizeDateUniversal(joinVal);
