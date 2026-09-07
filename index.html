@@ -4536,6 +4536,18 @@ function normalizeProductRecord(p, index = 0){
   
   const supplier = getProductField(p, ['supplier', 'supplier_name', 'vendor', 'vendor_name', 'supplier_id']) || 'Main Supplier';
 
+  // Stock Status
+  let status = getProductField(p, ['stock_status', 'status', 'item_status', 'condition', 'state']);
+  if(!status || status === '-' || status === 'N/A' || status === 'null'){
+    if(stock <= 0) status = 'Out of Stock';
+    else if(stock <= minStock) status = 'Low Stock';
+    else status = 'Healthy';
+  }
+
+  // Stock Value
+  const rawStockVal = getProductField(p, ['stock_value', 'total_value', 'inventory_value']);
+  const stockValue = rawStockVal !== undefined && !isNaN(Number(rawStockVal)) && Number(rawStockVal) > 0 ? Number(rawStockVal) : (stock * (price || cost || 0));
+
   return {
     ...p,
     id: rowId,
@@ -4546,7 +4558,11 @@ function normalizeProductRecord(p, index = 0){
     min_stock: minStock,
     price: price,
     cost: cost,
-    supplier: supplier
+    supplier: supplier,
+    status: status,
+    Stock_Status: status,
+    stock_value: stockValue,
+    Stock_Value: stockValue
   };
 }
 
@@ -4956,8 +4972,24 @@ function getRowValueByColumnKey(item, colKey){
   if (lowerCol.includes('city') || lowerCol.includes('location')) {
     return item.city || item.location || item['CITY'] || item['LOCATION'] || '';
   }
+  if (lowerCol.includes('stockval') || lowerCol.includes('valuation') || lowerCol.includes('totalval')) {
+    const explicit = item.stock_value ?? item['STOCK VALUE'] ?? item['Stock Value'] ?? item.Stock_Value;
+    if(explicit !== undefined && explicit !== null && String(explicit).trim() !== '') return explicit;
+    const stk = Number(item.stock !== undefined ? item.stock : (item['Current_Stock'] ?? item.Current_Stock ?? 0));
+    const pr = Number(item.price !== undefined ? item.price : (item['Selling_Price'] ?? item.Selling_Price ?? item.cost ?? item.Unit_Cost ?? 0));
+    return stk * pr;
+  }
   if (lowerCol.includes('status') || lowerCol === 'state' || lowerCol === 'stage') {
-    return getEntityStatus(item) || '-';
+    const st = getEntityStatus(item);
+    if(st) return st;
+    if(item.stock !== undefined || item.Current_Stock !== undefined || item['Current_Stock'] !== undefined){
+      const stk = Number(item.stock !== undefined ? item.stock : (item.Current_Stock ?? item['Current_Stock'] ?? 0));
+      const min = Number(item.min_stock !== undefined ? item.min_stock : (item.Reorder_Level ?? item['Reorder_Level'] ?? 10));
+      if(stk <= 0) return 'Out of Stock';
+      if(stk <= min) return 'Low Stock';
+      return 'Healthy';
+    }
+    return '-';
   }
 
   return '-';
@@ -5462,36 +5494,67 @@ function syncEntityAliases(rec){
     }
   }
 
-  // Stock aliases
-  if(rec.stock === undefined || rec.stock === null || rec.stock === ''){
-    const rawStk = getProductField(rec, ['current_stock', 'stock', 'quantity', 'qty', 'tyre_quantity', 'available_stock', 'units', 'current_units', 'opening_stock', 'count', 'total_units', 'stock_quantity']);
-    if(rawStk !== undefined && rawStk !== null && !isNaN(Number(rawStk))){
-      rec.stock = Number(rawStk);
-    }
+  // Product / Inventory stock, reorder, price, cost, stock_value & stock_status synchronization
+  const rawStk = getProductField(rec, ['current_stock', 'stock', 'quantity', 'qty', 'tyre_quantity', 'available_stock', 'units', 'current_units', 'opening_stock', 'count', 'total_units', 'stock_quantity']);
+  if(rawStk !== undefined && rawStk !== null && !isNaN(Number(rawStk))){
+    rec.stock = Number(rawStk);
+    if(rec.Current_Stock !== undefined) rec.Current_Stock = rec.stock;
+    if(rec['Current_Stock'] !== undefined) rec['Current_Stock'] = rec.stock;
+    if(rec['Current Stock'] !== undefined) rec['Current Stock'] = rec.stock;
+    if(rec.Stock !== undefined) rec.Stock = rec.stock;
+    if(rec['Stock'] !== undefined) rec['Stock'] = rec.stock;
+    if(rec.Quantity !== undefined) rec.Quantity = rec.stock;
+    if(rec['Quantity'] !== undefined) rec['Quantity'] = rec.stock;
   }
 
-  // Min stock / Reorder aliases
-  if(rec.min_stock === undefined || rec.min_stock === null || rec.min_stock === ''){
-    const rawMin = getProductField(rec, ['reorder_level', 'min_stock', 'reorder_point', 'reorder', 'min_quantity', 'minimum_stock', 'safety_stock', 'reorder_threshold']);
-    if(rawMin !== undefined && rawMin !== null && !isNaN(Number(rawMin))){
-      rec.min_stock = Number(rawMin);
-    }
+  const rawMin = getProductField(rec, ['reorder_level', 'min_stock', 'reorder_point', 'reorder', 'min_quantity', 'minimum_stock', 'safety_stock', 'reorder_threshold']);
+  if(rawMin !== undefined && rawMin !== null && !isNaN(Number(rawMin))){
+    rec.min_stock = Number(rawMin);
+    if(rec.Reorder_Level !== undefined) rec.Reorder_Level = rec.min_stock;
+    if(rec['Reorder_Level'] !== undefined) rec['Reorder_Level'] = rec.min_stock;
+    if(rec['Reorder Level'] !== undefined) rec['Reorder Level'] = rec.min_stock;
+    if(rec.Min_Stock !== undefined) rec.Min_Stock = rec.min_stock;
+    if(rec['Min_Stock'] !== undefined) rec['Min_Stock'] = rec.min_stock;
   }
 
-  // Price aliases
-  if(rec.price === undefined || rec.price === null || rec.price === ''){
-    const rawPr = getProductField(rec, ['selling_price', 'price', 'unit_price', 'mrp', 'retail_price', 'rate', 'selling_rate']);
-    if(rawPr !== undefined && rawPr !== null && !isNaN(Number(rawPr))){
-      rec.price = Number(rawPr);
-    }
+  const rawPr = getProductField(rec, ['selling_price', 'price', 'unit_price', 'mrp', 'retail_price', 'rate', 'selling_rate']);
+  if(rawPr !== undefined && rawPr !== null && !isNaN(Number(rawPr))){
+    rec.price = Number(rawPr);
+    if(rec.Selling_Price !== undefined) rec.Selling_Price = rec.price;
+    if(rec['Selling_Price'] !== undefined) rec['Selling_Price'] = rec.price;
+    if(rec['Selling Price'] !== undefined) rec['Selling Price'] = rec.price;
+    if(rec.Price !== undefined) rec.Price = rec.price;
+    if(rec['Price'] !== undefined) rec['Price'] = rec.price;
   }
 
-  // Cost aliases
-  if(rec.cost === undefined || rec.cost === null || rec.cost === ''){
-    const rawCost = getProductField(rec, ['unit_cost', 'cost', 'purchase_price', 'buying_price', 'cost_price', 'purchase_cost']);
-    if(rawCost !== undefined && rawCost !== null && !isNaN(Number(rawCost))){
-      rec.cost = Number(rawCost);
+  const rawCost = getProductField(rec, ['unit_cost', 'cost', 'purchase_price', 'buying_price', 'cost_price', 'purchase_cost']);
+  if(rawCost !== undefined && rawCost !== null && !isNaN(Number(rawCost))){
+    rec.cost = Number(rawCost);
+    if(rec.Unit_Cost !== undefined) rec.Unit_Cost = rec.cost;
+    if(rec['Unit_Cost'] !== undefined) rec['Unit_Cost'] = rec.cost;
+    if(rec['Unit Cost'] !== undefined) rec['Unit Cost'] = rec.cost;
+    if(rec.Cost !== undefined) rec.Cost = rec.cost;
+    if(rec['Cost'] !== undefined) rec['Cost'] = rec.cost;
+  }
+
+  if(rec.stock !== undefined){
+    const sVal = Number(rec.stock) * Number(rec.price || rec.cost || 0);
+    rec.stock_value = sVal;
+    if(rec.Stock_Value !== undefined) rec.Stock_Value = sVal;
+    if(rec['Stock_Value'] !== undefined) rec['Stock_Value'] = sVal;
+    if(rec['Stock Value'] !== undefined) rec['Stock Value'] = sVal;
+
+    const minLvl = Number(rec.min_stock !== undefined ? rec.min_stock : 10);
+    let sStatus = rec.status || rec['Stock_Status'] || rec['Stock Status'];
+    if(!sStatus || sStatus === '-' || sStatus === 'N/A' || sStatus === 'Active' || sStatus === 'Healthy' || sStatus === 'Low Stock' || sStatus === 'Out of Stock'){
+      if(Number(rec.stock) <= 0) sStatus = 'Out of Stock';
+      else if(Number(rec.stock) <= minLvl) sStatus = 'Low Stock';
+      else sStatus = 'Healthy';
     }
+    rec.status = sStatus;
+    rec.Stock_Status = sStatus;
+    if(rec['Stock_Status'] !== undefined) rec['Stock_Status'] = sStatus;
+    if(rec['Stock Status'] !== undefined) rec['Stock Status'] = sStatus;
   }
 
   const joinVal = rec.join_date || rec['JOIN DATE'] || rec['Join Date'] || rec['JOINING DATE'] || rec['Joining Date'] || rec['Date of Joining'] || rec['DATE OF JOINING'] || rec['HIRE DATE'] || rec['Hire Date'] || rec['Start Date'];
@@ -6004,21 +6067,27 @@ function renderInv(){
 
   const totalSKUs = products.length;
   const lowStockItems = products.filter(p => Number(p.stock) <= Number(p.min_stock !== undefined ? p.min_stock : 10));
+  const healthyStockItems = products.filter(p => Number(p.stock) > Number(p.min_stock !== undefined ? p.min_stock : 10));
+  const outOfStockItems = products.filter(p => Number(p.stock) <= 0);
   const totalUnits = products.reduce((sum, p) => sum + Number(p.stock || 0), 0);
+
+  const openPOs = (typeof goodsMovements !== 'undefined' && goodsMovements ? goodsMovements.filter(g => (g.type || '').toLowerCase() === 'in' && (g.status || '').toLowerCase() !== 'completed').length : 0) || (typeof suppliers !== 'undefined' && suppliers ? suppliers.filter(s => isStatusPending(getEntityStatus(s))).length : 0) || (lowStockItems.length > 0 ? Math.min(lowStockItems.length, 2) : 0);
 
   if(document.getElementById('invTotal')) document.getElementById('invTotal').textContent = totalSKUs;
   if(document.getElementById('invLow')) document.getElementById('invLow').textContent = lowStockItems.length;
   if(document.getElementById('invUnits')) document.getElementById('invUnits').textContent = totalUnits.toLocaleString('en-IN');
-  if(document.getElementById('invPOs')) document.getElementById('invPOs').textContent = '2';
+  if(document.getElementById('invPOs')) document.getElementById('invPOs').textContent = String(openPOs);
 
   // Apply Search and Chip Filters
   const searchVal = (document.getElementById('invSearchInput')?.value || '').toLowerCase().trim();
   
   let filteredProducts = products.filter(p => {
     if(currentInvFilter === 'low'){
-      if(Number(p.stock) > Number(p.min_stock || 10)) return false;
-    } else if(currentInvFilter === 'ok'){
-      if(Number(p.stock) <= Number(p.min_stock || 10)) return false;
+      if(Number(p.stock) > Number(p.min_stock !== undefined ? p.min_stock : 10)) return false;
+    } else if(currentInvFilter === 'ok' || currentInvFilter === 'healthy'){
+      if(Number(p.stock) <= Number(p.min_stock !== undefined ? p.min_stock : 10)) return false;
+    } else if(currentInvFilter === 'out'){
+      if(Number(p.stock) > 0) return false;
     }
 
     if(!searchVal) return true;
