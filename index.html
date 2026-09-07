@@ -4483,12 +4483,35 @@ function showToast(msg, isError = false){
 // ENTITY NORMALIZATION HELPERS (EXCEL ALIAS RESOLUTION)
 // ---------------------------------------------------------
 
+function parseCleanNumber(val){
+  if(val === undefined || val === null || val === '') return 0;
+  if(typeof val === 'number') return isNaN(val) ? 0 : val;
+  const s = String(val).replace(/[^0-9.-]/g, '');
+  if(!s || isNaN(Number(s))) return 0;
+  return Number(s);
+}
+
 function getProductField(p, aliases){
   if(!p || typeof p !== 'object') return undefined;
+
+  // 1. Check specific raw spreadsheet / uppercase / custom keys FIRST
+  const normKeys = Object.keys(p).map(k => ({ raw: k, clean: k.toLowerCase().replace(/[^a-z0-9]/g, '') }));
+  
+  // Prioritize non-generic aliases first (e.g. current_stock, opening_stock, reorder_level, selling_price, unit_cost over generic 'stock', 'min_stock', 'price', 'cost')
+  for(const a of aliases){
+    const cleanA = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const found = normKeys.find(nk => nk.clean === cleanA && nk.raw !== 'stock' && nk.raw !== 'min_stock' && nk.raw !== 'price' && nk.raw !== 'cost');
+    if(found && p[found.raw] !== undefined && p[found.raw] !== null && String(p[found.raw]).trim() !== ''){
+      return p[found.raw];
+    }
+  }
+
+  // 2. Fallback to direct alias match
   for(const a of aliases){
     if(p[a] !== undefined && p[a] !== null && String(p[a]).trim() !== '') return p[a];
   }
-  const normKeys = Object.keys(p).map(k => ({ raw: k, clean: k.toLowerCase().replace(/[^a-z0-9]/g, '') }));
+
+  // 3. Fallback to any matching key
   for(const a of aliases){
     const cleanA = a.toLowerCase().replace(/[^a-z0-9]/g, '');
     const found = normKeys.find(nk => nk.clean === cleanA);
@@ -4496,6 +4519,7 @@ function getProductField(p, aliases){
       return p[found.raw];
     }
   }
+
   return undefined;
 }
 
@@ -4518,35 +4542,39 @@ function normalizeProductRecord(p, index = 0){
   const sku = getProductField(p, ['sku', 'item_code', 'product_id', 'inventory_id', 'tyre_id', 'code', 'barcode']) || ('SKU-' + String(rowId).slice(-4));
   const category = getProductField(p, ['category', 'product_category', 'vehicle_type', 'type', 'segment']) || 'General';
   
-  // Extract Stock: Current_Stock > Stock > Quantity > Qty > Opening_Stock > Units
-  const rawStock = getProductField(p, ['current_stock', 'stock', 'quantity', 'qty', 'tyre_quantity', 'available_stock', 'units', 'current_units', 'opening_stock', 'count', 'total_units', 'stock_quantity']);
-  const stock = rawStock !== undefined && !isNaN(Number(rawStock)) && rawStock !== '' && rawStock !== null ? Number(rawStock) : (p.stock !== undefined ? Number(p.stock) : 0);
+  // Extract Stock: Current_Stock > Quantity > Qty > Opening_Stock > Units > Stock
+  const rawStock = getProductField(p, ['current_stock', 'quantity', 'qty', 'tyre_quantity', 'available_stock', 'units', 'current_units', 'opening_stock', 'count', 'total_units', 'stock_quantity', 'stock']);
+  const stock = parseCleanNumber(rawStock);
   
-  // Extract Reorder Level: Reorder_Level > Min_Stock > Reorder_Point > Min_Quantity
-  const rawMin = getProductField(p, ['reorder_level', 'min_stock', 'reorder_point', 'reorder', 'min_quantity', 'minimum_stock', 'safety_stock', 'reorder_threshold']);
-  const minStock = rawMin !== undefined && !isNaN(Number(rawMin)) && rawMin !== '' && rawMin !== null ? Number(rawMin) : (p.min_stock !== undefined ? Number(p.min_stock) : 10);
+  // Extract Reorder Level: Reorder_Level > Reorder_Point > Min_Quantity > Minimum_Stock > Min_Stock
+  const rawMin = getProductField(p, ['reorder_level', 'reorder_point', 'reorder', 'min_quantity', 'minimum_stock', 'safety_stock', 'reorder_threshold', 'min_stock']);
+  const minStock = rawMin !== undefined && String(rawMin).trim() !== '' ? parseCleanNumber(rawMin) : 10;
   
-  // Extract Price: Selling_Price > Price > Unit_Price > MRP > Rate
-  const rawPrice = getProductField(p, ['selling_price', 'price', 'unit_price', 'mrp', 'retail_price', 'rate', 'selling_rate']);
-  const price = rawPrice !== undefined && !isNaN(Number(rawPrice)) && rawPrice !== '' && rawPrice !== null ? Number(rawPrice) : (p.price !== undefined ? Number(p.price) : 0);
+  // Extract Price: Selling_Price > Unit_Price > MRP > Retail_Price > Price
+  const rawPrice = getProductField(p, ['selling_price', 'unit_price', 'mrp', 'retail_price', 'rate', 'selling_rate', 'price']);
+  const price = parseCleanNumber(rawPrice);
   
-  // Extract Cost: Unit_Cost > Cost > Purchase_Price > Buying_Price
-  const rawCost = getProductField(p, ['unit_cost', 'cost', 'purchase_price', 'buying_price', 'cost_price', 'purchase_cost']);
-  const cost = rawCost !== undefined && !isNaN(Number(rawCost)) && rawCost !== '' && rawCost !== null ? Number(rawCost) : (p.cost !== undefined ? Number(p.cost) : Math.round(price * 0.65));
+  // Extract Cost: Unit_Cost > Purchase_Price > Buying_Price > Cost
+  const rawCost = getProductField(p, ['unit_cost', 'purchase_price', 'buying_price', 'cost_price', 'purchase_cost', 'cost']);
+  const cost = rawCost !== undefined && String(rawCost).trim() !== '' ? parseCleanNumber(rawCost) : Math.round(price * 0.65);
   
   const supplier = getProductField(p, ['supplier', 'supplier_name', 'vendor', 'vendor_name', 'supplier_id']) || 'Main Supplier';
 
   // Stock Status
   let status = getProductField(p, ['stock_status', 'status', 'item_status', 'condition', 'state']);
-  if(!status || status === '-' || status === 'N/A' || status === 'null'){
+  const lowerStatus = String(status || '').toLowerCase().trim();
+  if(!status || status === '-' || status === 'N/A' || status === 'null' || lowerStatus === 'in stock' || lowerStatus === 'reorder' || lowerStatus === 'healthy' || lowerStatus === 'low stock' || lowerStatus === 'out of stock'){
     if(stock <= 0) status = 'Out of Stock';
     else if(stock <= minStock) status = 'Low Stock';
     else status = 'Healthy';
   }
 
   // Stock Value
+  let stockValue = stock * (price || cost || 0);
   const rawStockVal = getProductField(p, ['stock_value', 'total_value', 'inventory_value']);
-  const stockValue = rawStockVal !== undefined && !isNaN(Number(rawStockVal)) && Number(rawStockVal) > 0 ? Number(rawStockVal) : (stock * (price || cost || 0));
+  if(rawStockVal !== undefined && parseCleanNumber(rawStockVal) > 0){
+    stockValue = parseCleanNumber(rawStockVal);
+  }
 
   return {
     ...p,
@@ -4562,7 +4590,20 @@ function normalizeProductRecord(p, index = 0){
     status: status,
     Stock_Status: status,
     stock_value: stockValue,
-    Stock_Value: stockValue
+    Stock_Value: stockValue,
+    // Sync all normalized keys across object so dynamic table & KPI cards read correct values
+    Current_Stock: stock,
+    "CURRENT STOCK": stock,
+    "Current Stock": stock,
+    Reorder_Level: minStock,
+    "REORDER LEVEL": minStock,
+    "Reorder Level": minStock,
+    Unit_Cost: cost,
+    "UNIT COST": cost,
+    Selling_Price: price,
+    "SELLING PRICE": price,
+    "STOCK VALUE": stockValue,
+    "Stock Value": stockValue
   };
 }
 
@@ -4927,17 +4968,23 @@ function getRowValueByColumnKey(item, colKey){
   if (lowerCol.includes('totalorders') || lowerCol.includes('ordercount') || lowerCol.includes('orders') || lowerCol.includes('visits')) {
     return item.total_orders !== undefined ? item.total_orders : (item['TOTAL ORDERS'] ?? item['Total Orders'] ?? item.orders ?? item.visits ?? '');
   }
-  if (lowerCol.includes('currentstock') || lowerCol.includes('openingstock') || lowerCol.includes('stock') || lowerCol.includes('qty') || lowerCol.includes('quantity') || lowerCol.includes('units')) {
+  if (lowerCol.includes('currentstock')) {
+    return item.Current_Stock !== undefined ? item.Current_Stock : (item['CURRENT STOCK'] ?? item['Current Stock'] ?? item.stock ?? '');
+  }
+  if (lowerCol.includes('openingstock')) {
+    return item.Opening_Stock !== undefined ? item.Opening_Stock : (item['OPENING STOCK'] ?? item['Opening Stock'] ?? item.opening_stock ?? '');
+  }
+  if (lowerCol.includes('stock') || lowerCol.includes('qty') || lowerCol.includes('quantity') || lowerCol.includes('units')) {
     return item.stock !== undefined ? item.stock : (item['STOCK'] ?? item['QUANTITY'] ?? item['QTY'] ?? item['CURRENT STOCK'] ?? item['OPENING STOCK'] ?? '');
   }
   if (lowerCol.includes('reorder') || lowerCol.includes('min')) {
-    return item.min_stock !== undefined ? item.min_stock : (item['MIN_STOCK'] ?? item['MIN REORDER LEVEL'] ?? '');
+    return item.min_stock !== undefined ? item.min_stock : (item['MIN_STOCK'] ?? item['MIN REORDER LEVEL'] ?? item['REORDER LEVEL'] ?? item['Reorder Level'] ?? '');
   }
   if (lowerCol.includes('price') || lowerCol.includes('sell') || lowerCol.includes('mrp') || lowerCol.includes('rate')) {
-    return item.price !== undefined ? item.price : (item['PRICE'] ?? item['UNIT PRICE'] ?? item['SELLING PRICE'] ?? '');
+    return item.price !== undefined ? item.price : (item['PRICE'] ?? item['UNIT PRICE'] ?? item['SELLING PRICE'] ?? item['Selling Price'] ?? '');
   }
   if (lowerCol.includes('cost') || lowerCol.includes('buy') || lowerCol.includes('purchase')) {
-    return item.cost !== undefined ? item.cost : (item['COST'] ?? item['PURCHASE COST'] ?? item['PURCHASE PRICE'] ?? '');
+    return item.cost !== undefined ? item.cost : (item['COST'] ?? item['PURCHASE COST'] ?? item['PURCHASE PRICE'] ?? item['UNIT COST'] ?? item['Unit Cost'] ?? '');
   }
   if (lowerCol.includes('supplier') || lowerCol.includes('vendor')) {
     return item.supplier || item['SUPPLIER'] || item['SUPPLIER NAME'] || item['VENDOR'] || '';
@@ -4974,10 +5021,10 @@ function getRowValueByColumnKey(item, colKey){
   }
   if (lowerCol.includes('stockval') || lowerCol.includes('valuation') || lowerCol.includes('totalval')) {
     const explicit = item.stock_value ?? item['STOCK VALUE'] ?? item['Stock Value'] ?? item.Stock_Value;
-    if(explicit !== undefined && explicit !== null && String(explicit).trim() !== '') return explicit;
-    const stk = Number(item.stock !== undefined ? item.stock : (item['Current_Stock'] ?? item.Current_Stock ?? 0));
-    const pr = Number(item.price !== undefined ? item.price : (item['Selling_Price'] ?? item.Selling_Price ?? item.cost ?? item.Unit_Cost ?? 0));
-    return stk * pr;
+    if(explicit !== undefined && explicit !== null && parseCleanNumber(explicit) > 0) return parseCleanNumber(explicit);
+    const stk = Number(item.stock !== undefined ? item.stock : (item['Current_Stock'] ?? item.Current_Stock ?? item['CURRENT STOCK'] ?? 0));
+    const pr = Number(item.price !== undefined && item.price > 0 ? item.price : (item['Selling_Price'] ?? item.Selling_Price ?? item['SELLING PRICE'] ?? item.cost ?? item.Unit_Cost ?? 0));
+    return stk * (pr || Number(item.cost || 0));
   }
   if (lowerCol.includes('status') || lowerCol === 'state' || lowerCol === 'stage') {
     const st = getEntityStatus(item);
@@ -5495,66 +5542,73 @@ function syncEntityAliases(rec){
   }
 
   // Product / Inventory stock, reorder, price, cost, stock_value & stock_status synchronization
-  const rawStk = getProductField(rec, ['current_stock', 'stock', 'quantity', 'qty', 'tyre_quantity', 'available_stock', 'units', 'current_units', 'opening_stock', 'count', 'total_units', 'stock_quantity']);
-  if(rawStk !== undefined && rawStk !== null && !isNaN(Number(rawStk))){
-    rec.stock = Number(rawStk);
-    if(rec.Current_Stock !== undefined) rec.Current_Stock = rec.stock;
-    if(rec['Current_Stock'] !== undefined) rec['Current_Stock'] = rec.stock;
-    if(rec['Current Stock'] !== undefined) rec['Current Stock'] = rec.stock;
-    if(rec.Stock !== undefined) rec.Stock = rec.stock;
-    if(rec['Stock'] !== undefined) rec['Stock'] = rec.stock;
-    if(rec.Quantity !== undefined) rec.Quantity = rec.stock;
-    if(rec['Quantity'] !== undefined) rec['Quantity'] = rec.stock;
+  const rawStk = getProductField(rec, ['current_stock', 'quantity', 'qty', 'tyre_quantity', 'available_stock', 'units', 'current_units', 'opening_stock', 'count', 'total_units', 'stock_quantity', 'stock']);
+  if(rawStk !== undefined && rawStk !== null && String(rawStk).trim() !== ''){
+    rec.stock = parseCleanNumber(rawStk);
+    rec.Current_Stock = rec.stock;
+    rec['Current_Stock'] = rec.stock;
+    rec['Current Stock'] = rec.stock;
+    rec['CURRENT STOCK'] = rec.stock;
+    rec.Stock = rec.stock;
+    rec['Stock'] = rec.stock;
+    rec.Quantity = rec.stock;
+    rec['Quantity'] = rec.stock;
   }
 
-  const rawMin = getProductField(rec, ['reorder_level', 'min_stock', 'reorder_point', 'reorder', 'min_quantity', 'minimum_stock', 'safety_stock', 'reorder_threshold']);
-  if(rawMin !== undefined && rawMin !== null && !isNaN(Number(rawMin))){
-    rec.min_stock = Number(rawMin);
-    if(rec.Reorder_Level !== undefined) rec.Reorder_Level = rec.min_stock;
-    if(rec['Reorder_Level'] !== undefined) rec['Reorder_Level'] = rec.min_stock;
-    if(rec['Reorder Level'] !== undefined) rec['Reorder Level'] = rec.min_stock;
-    if(rec.Min_Stock !== undefined) rec.Min_Stock = rec.min_stock;
-    if(rec['Min_Stock'] !== undefined) rec['Min_Stock'] = rec.min_stock;
+  const rawMin = getProductField(rec, ['reorder_level', 'reorder_point', 'reorder', 'min_quantity', 'minimum_stock', 'safety_stock', 'reorder_threshold', 'min_stock']);
+  if(rawMin !== undefined && rawMin !== null && String(rawMin).trim() !== ''){
+    rec.min_stock = parseCleanNumber(rawMin);
+    rec.Reorder_Level = rec.min_stock;
+    rec['Reorder_Level'] = rec.min_stock;
+    rec['Reorder Level'] = rec.min_stock;
+    rec['REORDER LEVEL'] = rec.min_stock;
+    rec.Min_Stock = rec.min_stock;
+    rec['Min_Stock'] = rec.min_stock;
   }
 
-  const rawPr = getProductField(rec, ['selling_price', 'price', 'unit_price', 'mrp', 'retail_price', 'rate', 'selling_rate']);
-  if(rawPr !== undefined && rawPr !== null && !isNaN(Number(rawPr))){
-    rec.price = Number(rawPr);
-    if(rec.Selling_Price !== undefined) rec.Selling_Price = rec.price;
-    if(rec['Selling_Price'] !== undefined) rec['Selling_Price'] = rec.price;
-    if(rec['Selling Price'] !== undefined) rec['Selling Price'] = rec.price;
-    if(rec.Price !== undefined) rec.Price = rec.price;
-    if(rec['Price'] !== undefined) rec['Price'] = rec.price;
+  const rawPr = getProductField(rec, ['selling_price', 'unit_price', 'mrp', 'retail_price', 'rate', 'selling_rate', 'price']);
+  if(rawPr !== undefined && rawPr !== null && String(rawPr).trim() !== ''){
+    rec.price = parseCleanNumber(rawPr);
+    rec.Selling_Price = rec.price;
+    rec['Selling_Price'] = rec.price;
+    rec['Selling Price'] = rec.price;
+    rec['SELLING PRICE'] = rec.price;
+    rec.Price = rec.price;
+    rec['Price'] = rec.price;
   }
 
-  const rawCost = getProductField(rec, ['unit_cost', 'cost', 'purchase_price', 'buying_price', 'cost_price', 'purchase_cost']);
-  if(rawCost !== undefined && rawCost !== null && !isNaN(Number(rawCost))){
-    rec.cost = Number(rawCost);
-    if(rec.Unit_Cost !== undefined) rec.Unit_Cost = rec.cost;
-    if(rec['Unit_Cost'] !== undefined) rec['Unit_Cost'] = rec.cost;
-    if(rec['Unit Cost'] !== undefined) rec['Unit Cost'] = rec.cost;
-    if(rec.Cost !== undefined) rec.Cost = rec.cost;
-    if(rec['Cost'] !== undefined) rec['Cost'] = rec.cost;
+  const rawCost = getProductField(rec, ['unit_cost', 'purchase_price', 'buying_price', 'cost_price', 'purchase_cost', 'cost']);
+  if(rawCost !== undefined && rawCost !== null && String(rawCost).trim() !== ''){
+    rec.cost = parseCleanNumber(rawCost);
+    rec.Unit_Cost = rec.cost;
+    rec['Unit_Cost'] = rec.cost;
+    rec['Unit Cost'] = rec.cost;
+    rec['UNIT COST'] = rec.cost;
+    rec.Cost = rec.cost;
+    rec['Cost'] = rec.cost;
   }
 
   if(rec.stock !== undefined){
     const sVal = Number(rec.stock) * Number(rec.price || rec.cost || 0);
     rec.stock_value = sVal;
-    if(rec.Stock_Value !== undefined) rec.Stock_Value = sVal;
-    if(rec['Stock_Value'] !== undefined) rec['Stock_Value'] = sVal;
-    if(rec['Stock Value'] !== undefined) rec['Stock Value'] = sVal;
+    rec.Stock_Value = sVal;
+    rec['Stock_Value'] = sVal;
+    rec['Stock Value'] = sVal;
+    rec['STOCK VALUE'] = sVal;
 
     const minLvl = Number(rec.min_stock !== undefined ? rec.min_stock : 10);
-    let sStatus = rec.status || rec['Stock_Status'] || rec['Stock Status'];
-    if(!sStatus || sStatus === '-' || sStatus === 'N/A' || sStatus === 'Active' || sStatus === 'Healthy' || sStatus === 'Low Stock' || sStatus === 'Out of Stock'){
+    let sStatus = rec.status || rec['Stock_Status'] || rec['Stock Status'] || rec['STOCK STATUS'];
+    const lowerS = String(sStatus || '').toLowerCase().trim();
+    if(!sStatus || sStatus === '-' || sStatus === 'N/A' || sStatus === 'Active' || lowerS === 'healthy' || lowerS === 'low stock' || lowerS === 'out of stock' || lowerS === 'in stock' || lowerS === 'reorder'){
       if(Number(rec.stock) <= 0) sStatus = 'Out of Stock';
       else if(Number(rec.stock) <= minLvl) sStatus = 'Low Stock';
       else sStatus = 'Healthy';
     }
     rec.status = sStatus;
     rec.Stock_Status = sStatus;
-    if(rec['Stock_Status'] !== undefined) rec['Stock_Status'] = sStatus;
-    if(rec['Stock Status'] !== undefined) rec['Stock Status'] = sStatus;
+    rec['Stock_Status'] = sStatus;
+    rec['Stock Status'] = sStatus;
+    rec['STOCK STATUS'] = sStatus;
   }
 
   const joinVal = rec.join_date || rec['JOIN DATE'] || rec['Join Date'] || rec['JOINING DATE'] || rec['Joining Date'] || rec['Date of Joining'] || rec['DATE OF JOINING'] || rec['HIRE DATE'] || rec['Hire Date'] || rec['Start Date'];
