@@ -2382,10 +2382,10 @@ html, body {
         </div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
-        <div class="card stat-card"><div class="card-title">Total Staff</div><div class="stat-value" id="empTotal">64</div></div>
-        <div class="card stat-card"><div class="card-title">Active</div><div class="stat-value" id="empActive">64</div></div>
+        <div class="card stat-card"><div class="card-title">Total Staff</div><div class="stat-value" id="empTotal">0</div></div>
+        <div class="card stat-card"><div class="card-title">Active</div><div class="stat-value" id="empActive">0</div></div>
         <div class="card stat-card"><div class="card-title">On Leave</div><div class="stat-value" id="empOnLeave">0</div></div>
-        <div class="card stat-card"><div class="card-title">Avg. Attendance</div><div class="stat-value" id="empAvgAtt">95%</div></div>
+        <div class="card stat-card"><div class="card-title">Avg. Attendance</div><div class="stat-value" id="empAvgAtt">0%</div></div>
       </div>
 
       <div class="toolbar-row">
@@ -5112,7 +5112,7 @@ function openDynamicRowEditor(entityName, id){
   currentEditingRowId = id || null;
 
   const dataset = getEntityDataset(entityName);
-  const entitySingular = entityName === 'employees' ? 'Employee' : (entityName === 'customers' ? 'Customer' : (entityName === 'products' ? 'Product' : (entityName === 'suppliers' ? 'Supplier' : 'Record')));
+  const entitySingular = entityName === 'employees' ? 'Employee' : (entityName === 'customers' ? 'Customer' : (entityName === 'products' ? 'Product' : (entityName === 'suppliers' ? 'Supplier' : (entityName === 'goodsMovements' ? 'Goods Movement' : 'Record'))));
 
   let item = null;
   if(id){
@@ -5127,7 +5127,7 @@ function openDynamicRowEditor(entityName, id){
   const displayLabel = item ? (item.name || item['SUPPLIER NAME'] || item['SUPPLIER_NAME'] || item['CUSTOMER NAME'] || item['CUSTOMER_NAME'] || item['EMPLOYEE NAME'] || item['Employee Name'] || item['PRODUCT NAME'] || item['Product Title'] || item['Client Name'] || item['Vendor Name'] || item.id || '') : '';
 
   if(modalTitle){
-    modalTitle.textContent = item ? ('Edit ' + entitySingular + (displayLabel ? ' &mdash; ' + displayLabel : '')) : ('Add ' + entitySingular);
+    modalTitle.textContent = item ? ('Edit ' + entitySingular + (displayLabel ? ' \u2014 ' + displayLabel : '')) : ('Add ' + entitySingular);
   }
   if(modalSub){
     modalSub.textContent = item ? ('Editing active fields for this ' + entitySingular.toLowerCase() + ' record') : ('Enter details matching your current ' + entitySingular.toLowerCase() + ' table fields');
@@ -5145,17 +5145,70 @@ function openDynamicRowEditor(entityName, id){
   }
 
   container.innerHTML = keys.map(k => {
-    const val = item ? (item[k] !== undefined && item[k] !== null ? String(item[k]) : '') : '';
+    let rawVal = item ? (item[k] !== undefined && item[k] !== null ? item[k] : getRowValueByColumnKey(item, k)) : '';
+    if(rawVal === '-') rawVal = '';
+    const val = String(rawVal).trim();
+
     const label = formatColumnHeader(k);
     const lowerKey = k.toLowerCase().trim();
     const isIdField = (lowerKey === 'id' || lowerKey.includes(' id') || lowerKey.includes('_id')) && !lowerKey.includes('guide');
     const isFullWidth = isFullWidthField(k, val);
     const isTextarea = (lowerKey.includes('note') || lowerKey.includes('desc') || lowerKey.includes('address') || lowerKey.includes('spec') || val.length > 70 || val.includes('\n'));
+    const isStatusField = isStatusKey(k) || lowerKey === 'status' || lowerKey.includes('status') || lowerKey === 'state';
+    const isDateField = isDateKey(k) || lowerKey.includes('date') || lowerKey.includes('dob') || lowerKey.includes('joining') || lowerKey.includes('joined') || lowerKey.includes('anniversary');
     const spanStyle = isFullWidth ? 'grid-column: span 2;' : 'grid-column: span 1;';
 
+    // 1. STATUS FIELD -> CLEAN DROPDOWN SELECTOR
+    if(isStatusField){
+      let statusOptions = [];
+      if(entityName === 'employees'){
+        statusOptions = ['Active', 'On Leave', 'Pending', 'Probation', 'Inactive', 'Terminated'];
+      } else if(entityName === 'products'){
+        statusOptions = ['In Stock', 'Low Stock', 'Out of Stock', 'Discontinued'];
+      } else if(entityName === 'invoices'){
+        statusOptions = ['Paid', 'Pending', 'Overdue', 'Draft', 'Cancelled'];
+      } else if(entityName === 'suppliers'){
+        statusOptions = ['Active', 'Pending', 'Verified', 'Inactive', 'Blacklisted'];
+      } else if(entityName === 'customers'){
+        statusOptions = ['Active', 'Lead', 'Pending', 'Inactive', 'VIP'];
+      } else {
+        statusOptions = ['Active', 'Pending', 'Completed', 'Inactive'];
+      }
+
+      // If existing value is not in default options, prepend it
+      const currentValLower = val.toLowerCase();
+      if(val && !statusOptions.some(opt => opt.toLowerCase() === currentValLower)){
+        statusOptions.unshift(val);
+      }
+
+      const optionsHtml = statusOptions.map(opt => {
+        const isSel = (val && opt.toLowerCase() === val.toLowerCase()) || (!val && opt.toLowerCase() === 'active');
+        return '<option value="' + escapeHtml(opt) + '"' + (isSel ? ' selected' : '') + '>' + escapeHtml(opt) + '</option>';
+      }).join('');
+
+      return '<div class="form-row" style="' + spanStyle + 'display:flex;flex-direction:column;gap:5px;margin-bottom:0;">' +
+        '<label style="font-size:12.5px;font-weight:600;color:var(--ink);">' + escapeHtml(label) + '</label>' +
+        '<select class="form-control" name="' + escapeHtml(k) + '" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#fff;color:var(--ink);cursor:pointer;">' +
+          optionsHtml +
+        '</select>' +
+      '</div>';
+    }
+
+    // 2. DATE FIELD -> ACCURATE HTML5 DATE INPUT WITH NORMALIZED YYYY-MM-DD
+    if(isDateField){
+      let dateValue = '';
+      if(val){
+        dateValue = normalizeDateUniversal(val) || val;
+      }
+      return '<div class="form-row" style="' + spanStyle + 'display:flex;flex-direction:column;gap:5px;margin-bottom:0;">' +
+        '<label style="font-size:12.5px;font-weight:600;color:var(--ink);">' + escapeHtml(label) + '</label>' +
+        '<input class="form-control" type="date" name="' + escapeHtml(k) + '" value="' + escapeHtml(dateValue) + '" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#fff;color:var(--ink);">' +
+      '</div>';
+    }
+
+    // 3. OTHER INPUT TYPES
     let inputType = 'text';
     if(lowerKey.includes('email')) inputType = 'email';
-    else if(lowerKey.includes('date') || lowerKey.includes('dob') || lowerKey.includes('joining')) inputType = 'date';
     else if(!lowerKey.includes('phone') && !lowerKey.includes('gst') && !lowerKey.includes('code') && !lowerKey.includes('pin') && !lowerKey.includes('zip') && !lowerKey.includes('id') &&
             (lowerKey.includes('salary') || lowerKey.includes('price') || lowerKey.includes('cost') || lowerKey.includes('stock') || lowerKey.includes('qty') || lowerKey.includes('quantity') || lowerKey.includes('ltv') || lowerKey.includes('balance') || lowerKey.includes('limit') || lowerKey.includes('rate') || lowerKey.includes('attendance') || lowerKey.includes('leave') || lowerKey.includes('rating') || lowerKey.includes('amount'))){
       inputType = 'number';
@@ -5192,16 +5245,29 @@ function saveDynamicRow(){
   const dataset = getEntityDataset(currentEditingEntity);
   if(!dataset) return;
 
-  const entitySingular = currentEditingEntity === 'employees' ? 'Employee' : (currentEditingEntity === 'customers' ? 'Customer' : (currentEditingEntity === 'products' ? 'Product' : (currentEditingEntity === 'suppliers' ? 'Supplier' : 'Record')));
+  const entitySingular = currentEditingEntity === 'employees' ? 'Employee' : (currentEditingEntity === 'customers' ? 'Customer' : (currentEditingEntity === 'products' ? 'Product' : (currentEditingEntity === 'suppliers' ? 'Supplier' : (currentEditingEntity === 'goodsMovements' ? 'Goods Movement' : 'Record'))));
 
   const form = document.getElementById('dynamicRowForm');
   const inputs = form ? form.querySelectorAll('input[name], textarea[name], select[name]') : [];
+
+  const existingItem = currentEditingRowId ? dataset.find(x => x.id === currentEditingRowId || x._rowId === currentEditingRowId || String(x.id) === String(currentEditingRowId) || (x['SUPPLIER ID'] && x['SUPPLIER ID'] === currentEditingRowId) || (x['CUSTOMER ID'] && x['CUSTOMER ID'] === currentEditingRowId) || (x['EMPLOYEE ID'] && x['EMPLOYEE ID'] === currentEditingRowId) || (x['PRODUCT ID'] && x['PRODUCT ID'] === currentEditingRowId) || (x.sku && x.sku === currentEditingRowId)) : null;
 
   const rowData = {};
   inputs.forEach(inp => {
     const key = inp.getAttribute('name');
     const val = inp.value.trim();
-    if(!isNaN(Number(val)) && val !== '' && !val.startsWith('+') && !val.startsWith('0') && !key.toLowerCase().includes('phone') && !key.toLowerCase().includes('gst') && !key.toLowerCase().includes('code') && !key.toLowerCase().includes('pin') && !key.toLowerCase().includes('zip') && !key.toLowerCase().includes('id')){
+    const lowerKey = key.toLowerCase();
+    const isDateField = isDateKey(key) || lowerKey.includes('date') || lowerKey.includes('dob') || lowerKey.includes('joining') || lowerKey.includes('joined') || lowerKey.includes('anniversary');
+
+    if(isDateField){
+      if(val){
+        rowData[key] = normalizeDateUniversal(val) || val;
+      } else if(existingItem && existingItem[key]){
+        rowData[key] = existingItem[key];
+      } else {
+        rowData[key] = '';
+      }
+    } else if(!isNaN(Number(val)) && val !== '' && !val.startsWith('+') && !val.startsWith('0') && !lowerKey.includes('phone') && !lowerKey.includes('gst') && !lowerKey.includes('code') && !lowerKey.includes('pin') && !lowerKey.includes('zip') && !lowerKey.includes('id') && !isStatusKey(key) && !lowerKey.includes('status')){
       rowData[key] = Number(val);
     } else {
       rowData[key] = val;
@@ -5272,9 +5338,6 @@ function saveDynamicRow(){
   else if(currentEditingEntity === 'products') renderInv();
   else if(currentEditingEntity === 'goodsMovements') renderGoodsMovements();
 
-  computeDashboard();
-  if(typeof computeHealthScore === 'function') computeHealthScore();
-
   currentEditingEntity = null;
   currentEditingRowId = null;
   updateAllDashboardsAndStats();
@@ -5285,51 +5348,66 @@ function syncEntityAliases(rec){
 
   // Name aliases
   const nameVal = rec.name || rec['NAME'] || rec['EMPLOYEE NAME'] || rec['Employee Name'] || rec['CUSTOMER NAME'] || rec['Customer Name'] || rec['SUPPLIER NAME'] || rec['Supplier Name'] || rec['PRODUCT NAME'] || rec['Product Name'] || rec['Product Title'] || rec['Client Name'] || rec['Vendor Name'] || rec['ITEM NAME'] || rec['ITEM'];
-  if(nameVal) rec.name = nameVal;
+  if(nameVal) rec.name = String(nameVal).trim();
+
+  // Status aliases
+  const statusVal = rec.status || rec['STATUS'] || rec['Status'] || rec['EMPLOYEE STATUS'] || rec['Employee Status'] || rec['STOCK STATUS'] || rec['Stock Status'] || rec['Payment Status'];
+  if(statusVal) rec.status = String(statusVal).trim();
+
+  // Join Date / Date of Joining aliases
+  const joinVal = rec.join_date || rec['JOIN DATE'] || rec['Join Date'] || rec['JOINING DATE'] || rec['Joining Date'] || rec['Date of Joining'] || rec['DATE OF JOINING'] || rec['HIRE DATE'] || rec['Hire Date'] || rec['Start Date'];
+  if(joinVal){
+    const normJoin = normalizeDateUniversal(joinVal);
+    if(normJoin) rec.join_date = normJoin;
+  }
 
   // Phone aliases
   const phoneVal = rec.phone || rec['PHONE'] || rec['MOBILE'] || rec['CONTACT NUMBER'] || rec['PHONE NUMBER'] || rec['Contact'];
-  if(phoneVal) rec.phone = phoneVal;
+  if(phoneVal) rec.phone = String(phoneVal).trim();
 
   // Email aliases
   const emailVal = rec.email || rec['EMAIL'] || rec['EMAIL ID'] || rec['MAIL'];
-  if(emailVal) rec.email = emailVal;
+  if(emailVal) rec.email = String(emailVal).trim();
 
   // Department aliases
   const deptVal = rec.department || rec['DEPARTMENT'] || rec['DEPT'] || rec['Department'];
-  if(deptVal) rec.department = deptVal;
+  if(deptVal) rec.department = String(deptVal).trim();
 
   // Salary aliases
   const salVal = rec.salary || rec['SALARY'] || rec['MONTHLY SALARY'] || rec['Monthly Salary'] || rec['CTC'];
-  if(salVal) rec.salary = Number(salVal) || 0;
+  if(salVal !== undefined && salVal !== null && salVal !== '') rec.salary = parseCleanNumber(salVal);
 
   // Role aliases
   const roleVal = rec.role || rec['ROLE'] || rec['DESIGNATION'] || rec['Designation'] || rec['Job Title'];
-  if(roleVal) rec.role = roleVal;
+  if(roleVal) rec.role = String(roleVal).trim();
 
   // LTV aliases
-  const ltvVal = rec.ltv || rec['LTV'] || rec['LIFETIME VALUE'] || rec['Lifetime Value'] || rec['Total Purchases'];
-  if(ltvVal) rec.ltv = Number(ltvVal) || 0;
+  const ltvVal = rec.ltv || rec['LTV'] || rec['LIFETIME VALUE'] || rec['Lifetime Value'] || rec['Total Purchases'] || rec.total_amount || rec['TOTAL AMOUNT'];
+  if(ltvVal !== undefined && ltvVal !== null && ltvVal !== '') rec.ltv = parseCleanNumber(ltvVal);
+
+  // Total Purchase Value aliases (Suppliers)
+  const tpVal = rec.total_purchase_value || rec['TOTAL PURCHASE VALUE'] || rec['Total Purchase Value'] || rec.total_amount || rec['TOTAL AMOUNT'];
+  if(tpVal !== undefined && tpVal !== null && tpVal !== '') rec.total_purchase_value = parseCleanNumber(tpVal);
 
   // City / Address aliases
   const cityVal = rec.city || rec['CITY'] || rec['City'] || rec.address || rec['ADDRESS'] || rec['Address'] || rec['LOCATION'] || rec['Location'];
-  if(cityVal) rec.city = cityVal;
+  if(cityVal) rec.city = String(cityVal).trim();
 
   // Price & Cost aliases
   const priceVal = rec.price || rec['PRICE'] || rec['SELLING PRICE'] || rec['Selling Price'] || rec['Selling Rate'] || rec['RATE'] || rec['MRP'];
-  if(priceVal) rec.price = Number(priceVal) || 0;
+  if(priceVal !== undefined && priceVal !== null && priceVal !== '') rec.price = parseCleanNumber(priceVal);
   const costVal = rec.cost || rec['COST'] || rec['PURCHASE PRICE'] || rec['Purchase Price'] || rec['Unit Cost'] || rec['BUYING PRICE'];
-  if(costVal) rec.cost = Number(costVal) || (rec.price ? Math.round(rec.price * 0.65) : 0);
+  if(costVal !== undefined && costVal !== null && costVal !== '') rec.cost = parseCleanNumber(costVal);
 
   // Stock & Reorder aliases
   const stockVal = rec.stock ?? rec['STOCK'] ?? rec['CURRENT STOCK'] ?? rec['Current Stock'] ?? rec['QUANTITY'] ?? rec['QTY'] ?? rec['Available Quantity'];
-  if(stockVal !== undefined && stockVal !== null) rec.stock = Number(stockVal) || 0;
+  if(stockVal !== undefined && stockVal !== null && stockVal !== '') rec.stock = parseCleanNumber(stockVal);
   const minStockVal = rec.min_stock ?? rec['MIN_STOCK'] ?? rec['MIN STOCK'] ?? rec['REORDER'] ?? rec['REORDER POINT'] ?? rec['Reorder Point'] ?? rec['Min Threshold'];
-  if(minStockVal !== undefined && minStockVal !== null) rec.min_stock = Number(minStockVal) || 10;
+  if(minStockVal !== undefined && minStockVal !== null && minStockVal !== '') rec.min_stock = parseCleanNumber(minStockVal);
 
   // Supplier rating aliases
   const ratingVal = rec.rating || rec['RATING'] || rec['Rating'] || rec['SCORE'];
-  if(ratingVal) rec.rating = ratingVal;
+  if(ratingVal !== undefined && ratingVal !== null && ratingVal !== '') rec.rating = ratingVal;
 }
 
 // ---------------------------------------------------------
@@ -5408,14 +5486,38 @@ function clearEmpSelections(){
 }
 
 function renderEmp(){
-  const activeCount = employees.filter(e => (e.status || 'Active').toLowerCase() === 'active').length;
-  const leaveCount = employees.filter(e => (e.status || '').toLowerCase().includes('leave')).length;
-  const avgAtt = employees.length ? Math.round(employees.reduce((s, e) => s + Number(e.attendance_pct || e.Attendance || 95), 0) / employees.length) : 95;
+  const validEmps = (employees || []).filter(e => e && typeof e === 'object' && Object.values(e).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
 
-  if(document.getElementById('empTotal')) document.getElementById('empTotal').textContent = employees.length;
+  const totalStaff = validEmps.length;
+  const activeCount = validEmps.filter(e => {
+    const st = String(e.status || e.STATUS || e.Status || e['STATUS'] || e['Status'] || e['Employee Status'] || 'Active').trim().toLowerCase();
+    return st === 'active' || st === 'permanent' || st === 'confirmed' || st === 'full-time';
+  }).length;
+
+  const leaveCount = validEmps.filter(e => {
+    const st = String(e.status || e.STATUS || e.Status || e['STATUS'] || e['Status'] || e['Employee Status'] || '').trim().toLowerCase();
+    return st.includes('leave') || st === 'on leave';
+  }).length;
+
+  const avgAtt = totalStaff ? Math.round(validEmps.reduce((s, e) => s + parseCleanNumber(e.attendance_pct || e.Attendance || e['ATTENDANCE'] || e['Attendance Pct'] || 95), 0) / totalStaff) : 0;
+  const totalPayroll = validEmps.reduce((s, e) => s + parseCleanNumber(e.salary || e.Salary || e['Monthly Salary'] || e['MONTHLY SALARY'] || 0), 0);
+
+  if(document.getElementById('empTotal')) document.getElementById('empTotal').textContent = totalStaff;
   if(document.getElementById('empActive')) document.getElementById('empActive').textContent = activeCount;
+  if(document.getElementById('empLeave')) document.getElementById('empLeave').textContent = leaveCount;
   if(document.getElementById('empOnLeave')) document.getElementById('empOnLeave').textContent = leaveCount;
-  if(document.getElementById('empAvgAtt')) document.getElementById('empAvgAtt').textContent = avgAtt + '%';
+  if(document.getElementById('empAttRate')) document.getElementById('empAttRate').textContent = (totalStaff > 0 ? avgAtt + '%' : '0%');
+  if(document.getElementById('empAvgAtt')) document.getElementById('empAvgAtt').textContent = (totalStaff > 0 ? avgAtt + '%' : '0%');
+  if(document.getElementById('empPayroll')) document.getElementById('empPayroll').textContent = INR(totalPayroll);
+
+  // Search filtering
+  const q = (document.getElementById('empSearchInput')?.value || '').trim().toLowerCase();
+  let displayData = validEmps;
+  if(q){
+    displayData = validEmps.filter(e => {
+      return Object.values(e).some(v => v !== undefined && v !== null && String(v).toLowerCase().includes(q));
+    });
+  }
 
   renderDynamicTable({
     tableId: 'empBody',
@@ -5424,13 +5526,14 @@ function renderEmp(){
     editBtnId: 'empBulkEditBtn',
     selectAllId: 'empSelectAll',
     rowCheckboxClass: 'emp-row-select',
-    data: employees,
+    data: displayData,
     defaultColumns: [
       { key: 'name', label: 'Employee Name' },
       { key: 'department', label: 'Department' },
       { key: 'salary', label: 'Monthly Salary' },
       { key: 'role', label: 'Role / Designation' },
-      { key: 'attendance_pct', label: 'Attendance' }
+      { key: 'attendance_pct', label: 'Attendance' },
+      { key: 'status', label: 'Status' }
     ],
     entityName: 'employees',
     onEdit: 'openEmployeeEditor',
