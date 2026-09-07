@@ -3761,37 +3761,63 @@ async function __syncEntityToSupabase(entity, localData){
         delete dbRow.id;
         result=await sb.from(cfg.table).insert(dbRow).select().single();
       }
+      // ── Early exit: table itself is missing ──────────────────────────────────
+      // e.g. "Could not find the table 'public.suppliers' in the schema cache"
+      // Retrying is pointless — skip all rows and show one clear message.
+      const tableNotFoundRe = /Could not find the table '([^']+)'/i;
+      if(result.error && tableNotFoundRe.test(result.error.message||'')){
+        const tblMatch = (result.error.message||'').match(tableNotFoundRe);
+        showToast(
+          `⚠️ Table "${tblMatch?.[1]||cfg.table}" is missing in Supabase. ` +
+          `Run supabase-migration.sql in the SQL Editor to create it.`, true
+        );
+        return; // abort the whole entity sync
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
       // ── Retry loop: strip unknown columns one at a time ──────────────────────
-      // Handles cases where the actual Supabase schema is missing multiple columns
-      // (e.g. purchase_price AND selling_price both absent). Each iteration strips
-      // one column named in the error message and retries. Max 10 strips to prevent
-      // infinite loops on genuine errors.
+      // Tracks what was stripped in each iteration via `strippedThisPass`.
+      // Only breaks when nothing new was stripped — prevents the old bug where
+      // kendra_meta was added to strippedCols then the break fired immediately
+      // before the Supabase retry call was made.
       const schemaErrRe = /kendra_meta|schema cache|column.*does not exist|Could not find/i;
       const strippedCols = new Set();
       let retries = 0;
       while(result.error && schemaErrRe.test(result.error.message||'') && retries < 10){
         retries++;
-        // Always drop kendra_meta on the first schema-cache error
-        if(dbRow.kendra_meta !== undefined){ delete dbRow.kendra_meta; strippedCols.add('kendra_meta'); }
-        // Parse the specific bad column from the error message
+        let strippedThisPass = false;
+
+        // Drop kendra_meta if still present
+        if(dbRow.kendra_meta !== undefined && !strippedCols.has('kendra_meta')){
+          delete dbRow.kendra_meta;
+          strippedCols.add('kendra_meta');
+          strippedThisPass = true;
+        }
+
+        // Parse and drop the specific column named in the error
         const colMatch = (result.error.message||'').match(/Could not find the '([^']+)' column/i)
           || (result.error.message||'').match(/column "([^"]+)" of relation/i)
           || (result.error.message||'').match(/column "([^"]+)"/i);
         const badCol = colMatch?.[1];
-        if(badCol && badCol !== 'business_id' && badCol !== 'id' && !strippedCols.has(badCol) && dbRow[badCol] !== undefined){
+        if(badCol && badCol !== 'business_id' && badCol !== 'id'
+            && !strippedCols.has(badCol) && dbRow[badCol] !== undefined){
           console.warn('[Kendra] Dropping column not in schema:', badCol);
           delete dbRow[badCol];
           strippedCols.add(badCol);
-        } else if(!badCol || strippedCols.has(badCol)){
-          // No new column to strip — can't recover further
-          break;
+          strippedThisPass = true;
         }
+
+        if(!strippedThisPass) break; // Nothing new stripped — can't recover
+
         if(dbRow.id && __isUuid(dbRow.id)){
           result = await sb.from(cfg.table).upsert(dbRow,{onConflict:'id'}).select().single();
         } else {
           delete dbRow.id;
           result = await sb.from(cfg.table).insert(dbRow).select().single();
         }
+
+        // Check again for table-not-found after retry too
+        if(result.error && tableNotFoundRe.test(result.error.message||'')) break;
       }
       // ─────────────────────────────────────────────────────────────────────────
 
