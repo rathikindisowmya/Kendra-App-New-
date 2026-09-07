@@ -4215,6 +4215,102 @@ function escapeHtml(str){
     .replace(/'/g, '&#039;');
 }
 
+function normalizeDateUniversal(val){
+  if(val === undefined || val === null || val === '') return '';
+  if(val instanceof Date && !isNaN(val.getTime())){
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+  }
+
+  const strVal = String(val).trim();
+  if(!strVal || strVal === '-' || strVal.toLowerCase() === 'n/a' || strVal.toLowerCase() === 'null') return '';
+
+  // 1. Numeric Excel serial number (e.g. 45424, "45424", 44927.5)
+  const num = Number(strVal);
+  if(!isNaN(num) && num >= 20000 && num <= 75000 && !strVal.startsWith('+') && !strVal.startsWith('00')){
+    try {
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      const dateObj = new Date(excelEpoch.getTime() + Math.round(num * 86400000));
+      if(!isNaN(dateObj.getTime())){
+        const y = dateObj.getUTCFullYear();
+        const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getUTCDate()).padStart(2, '0');
+        return y + '-' + m + '-' + d;
+      }
+    } catch(e){}
+  }
+
+  // 2. ISO format with timestamp: "2024-05-12T00:00:00.000Z" or "2024-05-12 14:30:00"
+  const isoMatch = strVal.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
+  if(isoMatch){
+    return isoMatch[1] + '-' + String(isoMatch[2]).padStart(2, '0') + '-' + String(isoMatch[3]).padStart(2, '0');
+  }
+
+  // 3. YYYY/MM/DD or YYYY.MM.DD
+  const ymdMatch = strVal.match(/^(\d{4})[\/\.](\d{1,2})[\/\.](\d{1,2})$/);
+  if(ymdMatch){
+    return ymdMatch[1] + '-' + String(ymdMatch[2]).padStart(2, '0') + '-' + String(ymdMatch[3]).padStart(2, '0');
+  }
+
+  const monthMap = {
+    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+    'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
+    'january': 1, 'february': 2, 'march': 3, 'april': 4, 'june': 6,
+    'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+  };
+
+  // 4. Named month: "15-Mar-2024", "15 Mar 2024", "15 March 2024", "15/Mar/2024"
+  const dMonYMatch = strVal.match(/^(\d{1,2})[\s\-\/\,]+([a-zA-Z]+)[\s\-\/\,]+(\d{2,4})$/);
+  if(dMonYMatch){
+    const dVal = Number(dMonYMatch[1]);
+    const monStr = dMonYMatch[2].toLowerCase();
+    let yVal = Number(dMonYMatch[3]);
+    if(yVal < 100) yVal += (yVal < 70 ? 2000 : 1900);
+    if(monthMap[monStr]){
+      return String(yVal).padStart(4, '0') + '-' + String(monthMap[monStr]).padStart(2, '0') + '-' + String(dVal).padStart(2, '0');
+    }
+  }
+
+  // 5. Month name first: "March 15, 2024", "Mar 15 2024"
+  const monDYMatch = strVal.match(/^([a-zA-Z]+)[\s\-\/\,]+(\d{1,2})[\s\-\/\,]+(\d{2,4})$/);
+  if(monDYMatch){
+    const monStr = monDYMatch[1].toLowerCase();
+    const dVal = Number(monDYMatch[2]);
+    let yVal = Number(monDYMatch[3]);
+    if(yVal < 100) yVal += (yVal < 70 ? 2000 : 1900);
+    if(monthMap[monStr]){
+      return String(yVal).padStart(4, '0') + '-' + String(monthMap[monStr]).padStart(2, '0') + '-' + String(dVal).padStart(2, '0');
+    }
+  }
+
+  // 6. Delimited numeric date: DD/MM/YYYY, MM/DD/YYYY, DD-MM-YYYY, DD.MM.YY
+  const numDateMatch = strVal.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if(numDateMatch){
+    const p1 = Number(numDateMatch[1]);
+    const p2 = Number(numDateMatch[2]);
+    let y = Number(numDateMatch[3]);
+    if(y < 100) y += (y < 70 ? 2000 : 1900);
+
+    // If first part > 12 -> must be Day-first (DD/MM/YYYY)
+    if(p1 > 12 && p2 <= 12){
+      return String(y).padStart(4, '0') + '-' + String(p2).padStart(2, '0') + '-' + String(p1).padStart(2, '0');
+    }
+    // If second part > 12 -> must be Month-first (MM/DD/YYYY)
+    else if(p2 > 12 && p1 <= 12){
+      return String(y).padStart(4, '0') + '-' + String(p1).padStart(2, '0') + '-' + String(p2).padStart(2, '0');
+    }
+    // Ambiguous (e.g. 05/12/2024): Default to DD/MM/YYYY (Day 5, Month 12) for Indian standard
+    else {
+      return String(y).padStart(4, '0') + '-' + String(p2).padStart(2, '0') + '-' + String(p1).padStart(2, '0');
+    }
+  }
+
+  return strVal;
+}
+
+
 function formatColumnHeader(str){
   if(!str) return '';
   return String(str)
@@ -4549,11 +4645,33 @@ function formatExcelCell(val, colKey){
                          lowerKey.includes('state') || 
                          lowerKey.includes('guideline');
 
-  if(isExplicitText){
+  if(isExplicitText && !lowerKey.includes('date')){
     return escapeHtml(strVal);
   }
 
-  // 1. Explicit Numeric / Quantity / Order Count Columns -> ALWAYS PURE NUMBER (NOT RUPEES)
+  // 1. Date formatting (Handles all Excel serials, ISO timestamps, DD/MM/YYYY, MM/DD/YYYY)
+  const isDateColumn = lowerKey.includes('date') || 
+                       lowerKey.includes('dob') || 
+                       lowerKey.includes('joining') || 
+                       lowerKey.includes('joined') || 
+                       lowerKey.includes('hired') || 
+                       lowerKey.includes('born') || 
+                       lowerKey.includes('expiry') || 
+                       lowerKey.includes('due') || 
+                       lowerKey.includes('timestamp') || 
+                       lowerKey.includes('created') || 
+                       lowerKey.includes('updated') || 
+                       lowerKey.includes('period') || 
+                       lowerKey.includes('restock');
+
+  if(isDateColumn || /^\d{4}-\d{2}-\d{2}/.test(strVal) || /^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(strVal) || (/^\d{5}$/.test(strVal) && Number(strVal) >= 20000 && Number(strVal) <= 75000)){
+    const normalized = normalizeDateUniversal(strVal);
+    if(normalized && /^\d{4}-\d{2}-\d{2}$/.test(normalized)){
+      return normalized;
+    }
+  }
+
+  // 2. Explicit Numeric / Quantity / Order Count Columns -> ALWAYS PURE NUMBER (NOT RUPEES)
   const isCountOrOrder = lowerKey === 'quantity' || 
                          lowerKey === 'qty' || 
                          lowerKey === 'stock' || 
@@ -4574,22 +4692,6 @@ function formatExcelCell(val, colKey){
       return '<b>' + cleanNum.toLocaleString('en-IN') + '</b>';
     }
     return escapeHtml(strVal);
-  }
-
-  // 2. Excel serial date conversion
-  if(!isNaN(Number(strVal)) && Number(strVal) >= 25000 && Number(strVal) <= 65000){
-    if(lowerKey.includes('date') || lowerKey.includes('dob') || lowerKey.includes('day') || lowerKey.includes('time')){
-      try {
-        const utcDays = Math.floor(Number(strVal) - 25569);
-        const dateObj = new Date(utcDays * 86400 * 1000);
-        if(!isNaN(dateObj.getTime())){
-          const y = dateObj.getUTCFullYear();
-          const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-          const d = String(dateObj.getUTCDate()).padStart(2, '0');
-          return y + '-' + m + '-' + d;
-        }
-      } catch(e){}
-    }
   }
 
   // 3. Currency formatting (ONLY for monetary fields)
@@ -8365,14 +8467,14 @@ function readImportFile(file){
       const data = new Uint8Array(e.target.result);
       // cellDates:true makes SheetJS parse date-formatted cells as JS Date objects
       // instead of Excel serial numbers (e.g. 45241 &#8594; Date("2023-11-15"))
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy-mm-dd' });
       
       let targetSheetName = workbook.SheetNames[0];
       let json = [];
 
       for(let i = 0; i < workbook.SheetNames.length; i++){
         const sn = workbook.SheetNames[i];
-        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sn], { defval: '', raw: false });
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sn], { defval: '', raw: false, dateNF: 'yyyy-mm-dd' });
         if(rows && rows.length > 0){
           json = rows;
           targetSheetName = sn;
@@ -8385,43 +8487,17 @@ function readImportFile(file){
         return;
       }
 
-      // &#9472;&#9472; Normalise date values across every imported row &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-      // With cellDates:true + raw:false, dates come as ISO strings like
-      // "2023-11-15T00:00:00.000Z". We strip the time part to YYYY-MM-DD.
-      // Also handles: JS Date objects, Excel serials, DD/MM/YYYY, MM/DD/YYYY.
-      const toISODate = (v) => {
-        if(!v && v !== 0) return v;
-        // Already a JS Date
-        if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
-        const s = String(v).trim();
-        // ISO string with time component: "2023-11-15T00:00:00.000Z"
-        if(/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.slice(0,10);
-        // Already YYYY-MM-DD
-        if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-        // DD/MM/YYYY or DD-MM-YYYY (common in India)
-        const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-        if(dmy) return `${dmy[3]}-${String(dmy[2]).padStart(2,'0')}-${String(dmy[1]).padStart(2,'0')}`;
-        // MM/DD/YYYY
-        const mdy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-        if(mdy) return `${mdy[3]}-${String(mdy[1]).padStart(2,'0')}-${String(mdy[2]).padStart(2,'0')}`;
-        // Excel serial number (numeric string, 5 digits, plausible range for dates)
-        if(/^\d{5}$/.test(s)){
-          const n = Number(s);
-          if(n > 25000 && n < 60000){ // roughly 1968&#8211;2064
-            const d = new Date(Date.UTC(1899,11,30) + n * 86400000);
-            return d.toISOString().slice(0,10);
-          }
-        }
-        return v; // not a recognisable date &mdash; leave as-is
-      };
-
-      // Common date-bearing column name patterns
-      const dateCols = /date|dob|joining|joined|hired|born|start|end|expiry|due|invoice|period|month|year/i;
+            // Normalise date values across every imported row
+      const dateCols = /date|dob|joining|joined|hired|born|start|end|expiry|due|invoice|period|month|year|restock|timestamp|created|updated/i;
 
       json = json.map(row => {
         const out = {};
         for(const [k, v] of Object.entries(row)){
-          out[k] = dateCols.test(k) ? toISODate(v) : v;
+          if(dateCols.test(k) || (/^\d{5}$/.test(String(v).trim()) && Number(v) >= 20000 && Number(v) <= 75000)){
+            out[k] = normalizeDateUniversal(v);
+          } else {
+            out[k] = v;
+          }
         }
         return out;
       });
