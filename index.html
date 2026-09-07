@@ -4483,31 +4483,58 @@ function showToast(msg, isError = false){
 // ENTITY NORMALIZATION HELPERS (EXCEL ALIAS RESOLUTION)
 // ---------------------------------------------------------
 
+function getProductField(p, aliases){
+  if(!p || typeof p !== 'object') return undefined;
+  for(const a of aliases){
+    if(p[a] !== undefined && p[a] !== null && String(p[a]).trim() !== '') return p[a];
+  }
+  const normKeys = Object.keys(p).map(k => ({ raw: k, clean: k.toLowerCase().replace(/[^a-z0-9]/g, '') }));
+  for(const a of aliases){
+    const cleanA = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const found = normKeys.find(nk => nk.clean === cleanA);
+    if(found && p[found.raw] !== undefined && p[found.raw] !== null && String(p[found.raw]).trim() !== ''){
+      return p[found.raw];
+    }
+  }
+  return undefined;
+}
+
 function normalizeProductRecord(p, index = 0){
   if(!p || typeof p !== 'object') return p;
-  const rowId = p.id || p._rowId || p['PRODUCT ID'] || p['PRODUCT_ID'] || p['ITEM ID'] || p['ITEM_CODE'] || p['SKU'] || ('prod-' + Date.now() + '-' + index);
   
-  const name = p.name || p['PRODUCT NAME'] || p['PRODUCT_NAME'] || p['PRODUCT'] || p['ITEM NAME'] || p['ITEM_NAME'] || p['ITEM'] || p['DESCRIPTION'] || p['TITLE'] || 'Product ' + (index + 1);
-  const sku = p.sku || p['SKU'] || p['ITEM CODE'] || p['ITEM_CODE'] || p['PRODUCT ID'] || p['PRODUCT_ID'] || p['CODE'] || p['BARCODE'] || ('SKU-' + String(rowId).slice(-4));
-  const category = p.category || p['CATEGORY'] || p['PRODUCT CATEGORY'] || p['PRODUCT_CATEGORY'] || p['TYPE'] || 'General';
+  const rowId = getProductField(p, ['id', '_rowId', 'product_id', 'inventory_id', 'item_id', 'sku', 'tyre_id', 'item_code', 'code']) || ('prod-' + Date.now() + '-' + index);
   
-  // Extract numeric stock safely
-  const rawStock = p.stock ?? p['STOCK'] ?? p['QUANTITY'] ?? p['QTY'] ?? p['UNITS'] ?? p['CURRENT STOCK'] ?? p['CURRENT_STOCK'] ?? p['STOCK_QUANTITY'] ?? p['COUNT'] ?? p['TOTAL UNITS'];
-  const stock = !isNaN(Number(rawStock)) && rawStock !== '' && rawStock !== null ? Number(rawStock) : (p.stock !== undefined ? Number(p.stock) : 0);
+  let name = getProductField(p, ['name', 'product_name', 'item_name', 'product_title', 'description', 'title', 'item', 'product']);
+  if(!name){
+    const brand = getProductField(p, ['tyre_brand', 'brand', 'make']);
+    const model = getProductField(p, ['tyre_model', 'model', 'pattern', 'item']);
+    if(brand || model){
+      name = [brand, model].filter(Boolean).join(' ');
+    } else {
+      name = 'Product ' + (index + 1);
+    }
+  }
+
+  const sku = getProductField(p, ['sku', 'item_code', 'product_id', 'inventory_id', 'tyre_id', 'code', 'barcode']) || ('SKU-' + String(rowId).slice(-4));
+  const category = getProductField(p, ['category', 'product_category', 'vehicle_type', 'type', 'segment']) || 'General';
   
-  // Extract min stock / reorder
-  const rawMin = p.min_stock ?? p['MIN_STOCK'] ?? p['MIN STOCK'] ?? p['REORDER'] ?? p['REORDER_POINT'] ?? p['REORDER POINT'] ?? p['MIN_QUANTITY'] ?? p['REORDER LEVEL'];
-  const minStock = !isNaN(Number(rawMin)) && rawMin !== '' && rawMin !== null ? Number(rawMin) : (p.min_stock !== undefined ? Number(p.min_stock) : 10);
+  // Extract Stock: Current_Stock > Stock > Quantity > Qty > Opening_Stock > Units
+  const rawStock = getProductField(p, ['current_stock', 'stock', 'quantity', 'qty', 'tyre_quantity', 'available_stock', 'units', 'current_units', 'opening_stock', 'count', 'total_units', 'stock_quantity']);
+  const stock = rawStock !== undefined && !isNaN(Number(rawStock)) && rawStock !== '' && rawStock !== null ? Number(rawStock) : (p.stock !== undefined ? Number(p.stock) : 0);
   
-  // Extract selling price
-  const rawPrice = p.price ?? p['PRICE'] ?? p['SELLING_PRICE'] ?? p['SELLING PRICE'] ?? p['UNIT PRICE'] ?? p['UNIT_PRICE'] ?? p['RATE'] ?? p['MRP'] ?? p['RETAIL_PRICE'];
-  const price = !isNaN(Number(rawPrice)) && rawPrice !== '' && rawPrice !== null ? Number(rawPrice) : (p.price !== undefined ? Number(p.price) : 0);
+  // Extract Reorder Level: Reorder_Level > Min_Stock > Reorder_Point > Min_Quantity
+  const rawMin = getProductField(p, ['reorder_level', 'min_stock', 'reorder_point', 'reorder', 'min_quantity', 'minimum_stock', 'safety_stock', 'reorder_threshold']);
+  const minStock = rawMin !== undefined && !isNaN(Number(rawMin)) && rawMin !== '' && rawMin !== null ? Number(rawMin) : (p.min_stock !== undefined ? Number(p.min_stock) : 10);
   
-  // Extract cost / purchase price
-  const rawCost = p.cost ?? p['COST'] ?? p['PURCHASE_PRICE'] ?? p['PURCHASE PRICE'] ?? p['BUYING_PRICE'] ?? p['COST_PRICE'];
-  const cost = !isNaN(Number(rawCost)) && rawCost !== '' && rawCost !== null ? Number(rawCost) : (p.cost !== undefined ? Number(p.cost) : Math.round(price * 0.65));
+  // Extract Price: Selling_Price > Price > Unit_Price > MRP > Rate
+  const rawPrice = getProductField(p, ['selling_price', 'price', 'unit_price', 'mrp', 'retail_price', 'rate', 'selling_rate']);
+  const price = rawPrice !== undefined && !isNaN(Number(rawPrice)) && rawPrice !== '' && rawPrice !== null ? Number(rawPrice) : (p.price !== undefined ? Number(p.price) : 0);
   
-  const supplier = p.supplier || p['SUPPLIER'] || p['VENDOR'] || p['SUPPLIER NAME'] || p['SUPPLIER_NAME'] || 'Main Supplier';
+  // Extract Cost: Unit_Cost > Cost > Purchase_Price > Buying_Price
+  const rawCost = getProductField(p, ['unit_cost', 'cost', 'purchase_price', 'buying_price', 'cost_price', 'purchase_cost']);
+  const cost = rawCost !== undefined && !isNaN(Number(rawCost)) && rawCost !== '' && rawCost !== null ? Number(rawCost) : (p.cost !== undefined ? Number(p.cost) : Math.round(price * 0.65));
+  
+  const supplier = getProductField(p, ['supplier', 'supplier_name', 'vendor', 'vendor_name', 'supplier_id']) || 'Main Supplier';
 
   return {
     ...p,
@@ -5415,6 +5442,12 @@ function syncEntityAliases(rec){
   // Name aliases
   const nameVal = rec.name || rec['NAME'] || rec['EMPLOYEE NAME'] || rec['Employee Name'] || rec['CUSTOMER NAME'] || rec['Customer Name'] || rec['SUPPLIER NAME'] || rec['Supplier Name'] || rec['PRODUCT NAME'] || rec['Product Name'] || rec['Product Title'] || rec['Client Name'] || rec['Vendor Name'] || rec['ITEM NAME'] || rec['ITEM'];
   if(nameVal) rec.name = String(nameVal).trim();
+  
+  if(!nameVal && (rec['Tyre_Brand'] || rec['Tyre Brand'] || rec['Tyre_Model'] || rec['Tyre Model'])){
+    const b = rec['Tyre_Brand'] || rec['Tyre Brand'] || '';
+    const m = rec['Tyre_Model'] || rec['Tyre Model'] || '';
+    rec.name = [b, m].filter(Boolean).join(' ').trim();
+  }
 
   // Status aliases -> dynamically find and sync across all keys
   const statusVal = getEntityStatus(rec);
@@ -5426,6 +5459,38 @@ function syncEntityAliases(rec){
       if(cleanK === 'status' || cleanK === 'employeestatus' || cleanK === 'supplierstatus' || cleanK === 'customerstatus' || cleanK === 'stockstatus' || cleanK === 'accountstatus' || cleanK === 'paymentstatus' || cleanK === 'orderstatus' || cleanK === 'employmentstatus' || cleanK === 'state' || cleanK === 'stage'){
         rec[k] = rec.status;
       }
+    }
+  }
+
+  // Stock aliases
+  if(rec.stock === undefined || rec.stock === null || rec.stock === ''){
+    const rawStk = getProductField(rec, ['current_stock', 'stock', 'quantity', 'qty', 'tyre_quantity', 'available_stock', 'units', 'current_units', 'opening_stock', 'count', 'total_units', 'stock_quantity']);
+    if(rawStk !== undefined && rawStk !== null && !isNaN(Number(rawStk))){
+      rec.stock = Number(rawStk);
+    }
+  }
+
+  // Min stock / Reorder aliases
+  if(rec.min_stock === undefined || rec.min_stock === null || rec.min_stock === ''){
+    const rawMin = getProductField(rec, ['reorder_level', 'min_stock', 'reorder_point', 'reorder', 'min_quantity', 'minimum_stock', 'safety_stock', 'reorder_threshold']);
+    if(rawMin !== undefined && rawMin !== null && !isNaN(Number(rawMin))){
+      rec.min_stock = Number(rawMin);
+    }
+  }
+
+  // Price aliases
+  if(rec.price === undefined || rec.price === null || rec.price === ''){
+    const rawPr = getProductField(rec, ['selling_price', 'price', 'unit_price', 'mrp', 'retail_price', 'rate', 'selling_rate']);
+    if(rawPr !== undefined && rawPr !== null && !isNaN(Number(rawPr))){
+      rec.price = Number(rawPr);
+    }
+  }
+
+  // Cost aliases
+  if(rec.cost === undefined || rec.cost === null || rec.cost === ''){
+    const rawCost = getProductField(rec, ['unit_cost', 'cost', 'purchase_price', 'buying_price', 'cost_price', 'purchase_cost']);
+    if(rawCost !== undefined && rawCost !== null && !isNaN(Number(rawCost))){
+      rec.cost = Number(rawCost);
     }
   }
 
@@ -5934,11 +5999,11 @@ function filterInvByCard(type){
 }
 
 function renderInv(){
-  // Normalize all products
+  // Normalize all products with full alias resolution
   products = products.map((p, idx) => normalizeProductRecord(p, idx));
 
   const totalSKUs = products.length;
-  const lowStockItems = products.filter(p => Number(p.stock) <= Number(p.min_stock || 10));
+  const lowStockItems = products.filter(p => Number(p.stock) <= Number(p.min_stock !== undefined ? p.min_stock : 10));
   const totalUnits = products.reduce((sum, p) => sum + Number(p.stock || 0), 0);
 
   if(document.getElementById('invTotal')) document.getElementById('invTotal').textContent = totalSKUs;
@@ -7591,22 +7656,21 @@ function getAggregatedBusinessMetrics(){
   // 5. INVENTORY & STOCK
   const totalProds = (products || []).length;
   const lowStockItems = (products || []).filter(p => {
-    const st = parseCleanNumber(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
-    const min = parseCleanNumber(p.min_stock !== undefined ? p.min_stock : (p['MIN_STOCK'] ?? p['Min Stock'] ?? p['Reorder Level'] ?? 10));
-    return st <= min;
+    const norm = normalizeProductRecord(p);
+    return Number(norm.stock) <= Number(norm.min_stock !== undefined ? norm.min_stock : 10);
   });
   const lowStockCount = lowStockItems.length;
 
   const invValuation = (products || []).reduce((s, p) => {
-    const explicitVal = parseCleanNumber(p.stock_value || p['STOCK VALUE'] || p['Stock Value']);
+    const explicitVal = parseCleanNumber(p.stock_value || p['STOCK VALUE'] || p['Stock Value'] || p.Stock_Value);
     if(explicitVal > 0) return s + explicitVal;
-    const price = parseCleanNumber(p.price !== undefined ? p.price : (p.selling_price || p.unit_price || p.cost || 0));
-    const stock = parseCleanNumber(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
-    return s + (price * stock);
+    const norm = normalizeProductRecord(p);
+    return s + (Number(norm.price || 0) * Number(norm.stock || 0));
   }, 0);
 
   const totalUnits = (products || []).reduce((s, p) => {
-    return s + parseCleanNumber(p.stock !== undefined ? p.stock : (p['STOCK'] ?? p['Current Stock'] ?? p.quantity ?? 0));
+    const norm = normalizeProductRecord(p);
+    return s + Number(norm.stock || 0);
   }, 0);
 
   // 6. CRM & CUSTOMERS
