@@ -112,6 +112,7 @@ input,select,textarea{font-family:inherit;}
 .btn-primary{background:var(--teal);color:#fff;}
 .btn-primary:hover{background:var(--teal-dark);}
 .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink);}
+.btn-ghost.active,#dashChartFilters button.active{background:var(--ink) !important;color:#ffffff !important;border-color:var(--ink) !important;font-weight:600;}
 .btn-ghost:hover{border-color:var(--ink-faint);background:#FAF9F5;}
 .btn-danger{background:var(--coral-soft);color:var(--coral);}
 .btn-danger:hover{background:var(--coral);color:#fff;}
@@ -2382,14 +2383,20 @@ html, body {
         </div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
-        <div class="card stat-card"><div class="card-title">Total Staff</div><div class="stat-value" id="empTotal">0</div></div>
-        <div class="card stat-card"><div class="card-title">Active</div><div class="stat-value" id="empActive">0</div></div>
-        <div class="card stat-card"><div class="card-title">On Leave</div><div class="stat-value" id="empOnLeave">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterEmpByCard('all')" title="Click to filter all staff"><div class="card-title">Total Staff</div><div class="stat-value" id="empTotal">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterEmpByCard('active')" title="Click to filter active staff"><div class="card-title">Active</div><div class="stat-value" id="empActive" style="color:var(--teal);">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterEmpByCard('leave')" title="Click to filter on leave staff"><div class="card-title">On Leave</div><div class="stat-value" id="empOnLeave" style="color:var(--amber);">0</div></div>
         <div class="card stat-card"><div class="card-title">Avg. Attendance</div><div class="stat-value" id="empAvgAtt">0%</div></div>
       </div>
 
       <div class="toolbar-row">
-        <div class="filter-bar" id="empFilterBar" style="margin-bottom:0;"></div>
+        <div class="filter-bar" id="empFilterBar" style="margin-bottom:0;">
+          <div class="chip active" onclick="filterEmp(this,'all')">All staff</div>
+          <div class="chip" onclick="filterEmp(this,'active')">Active</div>
+          <div class="chip" onclick="filterEmp(this,'leave')">On Leave</div>
+          <div class="chip" onclick="filterEmp(this,'pending')">Pending / Probation</div>
+          <div class="chip" onclick="filterEmp(this,'inactive')">Inactive</div>
+        </div>
         <div class="search-mini" style="margin-bottom:0;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
           <input id="empSearchInput" placeholder="Search employee..." oninput="renderEmp()">
@@ -2423,9 +2430,9 @@ html, body {
         </div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
-        <div class="card stat-card"><div class="card-title">Total Records</div><div class="stat-value" id="custTotal">50</div></div>
-        <div class="card stat-card"><div class="card-title">Open Complaints</div><div class="stat-value" id="custComplaints">0</div></div>
-        <div class="card stat-card"><div class="card-title">Follow-ups Due</div><div class="stat-value" id="custFollowups">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterCustByCard('all')" title="Filter all records"><div class="card-title">Total Records</div><div class="stat-value" id="custTotal">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterCustByCard('complaint')" title="Filter open complaints"><div class="card-title">Open Complaints</div><div class="stat-value" id="custComplaints" style="color:var(--coral);">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterCustByCard('followup')" title="Filter follow-ups due"><div class="card-title">Follow-ups Due</div><div class="stat-value" id="custFollowups" style="color:var(--amber);">0</div></div>
         <div class="card stat-card"><div class="card-title">Avg. LTV</div><div class="stat-value" id="custAvgLtv">&#8377;0</div></div>
       </div>
 
@@ -2468,10 +2475,10 @@ html, body {
         </div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
-        <div class="card stat-card"><div class="card-title">SKUs Tracked</div><div class="stat-value" id="invTotal">50</div></div>
-        <div class="card stat-card"><div class="card-title">Below Reorder Point</div><div class="stat-value" id="invLow" style="color:var(--coral)">50</div></div>
-        <div class="card stat-card"><div class="card-title">Total Units</div><div class="stat-value" id="invUnits">0</div></div>
-        <div class="card stat-card"><div class="card-title">Open POs</div><div class="stat-value" id="invPOs">2</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterInvByCard('all')" title="Filter all SKUs"><div class="card-title">SKUs Tracked</div><div class="stat-value" id="invTotal">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterInvByCard('low')" title="Filter low stock items"><div class="card-title">Below Reorder Point</div><div class="stat-value" id="invLow" style="color:var(--coral)">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterInvByCard('ok')" title="Filter healthy stock items"><div class="card-title">Total Units</div><div class="stat-value" id="invUnits">0</div></div>
+        <div class="card stat-card"><div class="card-title">Open POs</div><div class="stat-value" id="invPOs">0</div></div>
       </div>
 
       <div class="toolbar-row">
@@ -2510,12 +2517,18 @@ html, body {
         <div class="page-actions"><button class="btn btn-secondary" onclick="openImportFor(&#39;suppliers&#39;)" style="margin-right:8px;">&#128229; Import Suppliers</button><button class="btn btn-primary" onclick="openSupplierEditor()">+ Add Supplier</button></div>
       </div>
       <div class="grid g-4" style="margin-bottom:16px;">
-        <div class="card stat-card"><div class="card-title">Suppliers</div><div class="stat-value" id="supplierCount">24</div></div>
-        <div class="card stat-card"><div class="card-title">Active Vendors</div><div class="stat-value" id="supplierActive">24</div></div>
-        <div class="card stat-card"><div class="card-title">Open POs</div><div class="stat-value" id="supplierPOs">2</div></div>
-        <div class="card stat-card"><div class="card-title">Upcoming Payables</div><div class="stat-value" id="supplierPayables">&#8377;1,24,000</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterSuppliersByCard('all')" title="Click to filter all vendors"><div class="card-title">Suppliers</div><div class="stat-value" id="supplierCount">0</div></div>
+        <div class="card stat-card" style="cursor:pointer;" onclick="filterSuppliersByCard('active')" title="Click to filter active vendors"><div class="card-title">Active Vendors</div><div class="stat-value" id="supplierActive" style="color:var(--teal);">0</div></div>
+        <div class="card stat-card"><div class="card-title">Open POs</div><div class="stat-value" id="supplierPOs">0</div></div>
+        <div class="card stat-card"><div class="card-title">Upcoming Payables</div><div class="stat-value" id="supplierPayables">&#8377;0</div></div>
       </div>
       <div class="toolbar-row">
+        <div class="filter-bar" id="supplierFilterBar" style="margin-bottom:0;">
+          <div class="chip active" onclick="filterSuppliers(this,'all')">All vendors</div>
+          <div class="chip" onclick="filterSuppliers(this,'active')">Active</div>
+          <div class="chip" onclick="filterSuppliers(this,'pending')">Pending</div>
+          <div class="chip" onclick="filterSuppliers(this,'inactive')">Inactive</div>
+        </div>
         <div class="search-mini" style="margin-bottom:0;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
           <input id="supplierSearch" placeholder="Search supplier, GST, phone..." oninput="renderSuppliers()">
@@ -4704,13 +4717,13 @@ function formatExcelCell(val, colKey){
   // 1. Status badges
   if(isStatusKey(colKey)){
     const lowerVal = strVal.toLowerCase();
-    if(lowerVal.includes('active') || lowerVal.includes('valid') || lowerVal.includes('paid') || lowerVal.includes('success') || lowerVal.includes('yes') || lowerVal.includes('healthy') || lowerVal.includes('in stock') || lowerVal.includes('completed')){
+    if(lowerVal.includes('active') || lowerVal.includes('valid') || lowerVal.includes('paid') || lowerVal.includes('success') || lowerVal.includes('yes') || lowerVal.includes('healthy') || lowerVal.includes('in stock') || lowerVal.includes('completed') || lowerVal.includes('permanent') || lowerVal.includes('confirmed') || lowerVal.includes('full-time')){
       return '<span class="badge badge-green">' + escapeHtml(strVal) + '</span>';
     }
-    if(lowerVal.includes('pending') || lowerVal.includes('due') || lowerVal.includes('lead') || lowerVal.includes('review') || lowerVal.includes('low') || lowerVal.includes('draft')){
+    if(lowerVal.includes('pending') || lowerVal.includes('due') || lowerVal.includes('lead') || lowerVal.includes('review') || lowerVal.includes('low') || lowerVal.includes('draft') || lowerVal.includes('probation') || lowerVal.includes('leave') || lowerVal.includes('on leave')){
       return '<span class="badge badge-amber">' + escapeHtml(strVal) + '</span>';
     }
-    if(lowerVal.includes('overdue') || lowerVal.includes('inactive') || lowerVal.includes('expired') || lowerVal.includes('rejected') || lowerVal.includes('no') || lowerVal.includes('out of stock') || lowerVal.includes('cancelled')){
+    if(lowerVal.includes('overdue') || lowerVal.includes('inactive') || lowerVal.includes('expired') || lowerVal.includes('rejected') || lowerVal.includes('no') || lowerVal.includes('out of stock') || lowerVal.includes('cancelled') || lowerVal.includes('terminated')){
       return '<span class="badge badge-red">' + escapeHtml(strVal) + '</span>';
     }
   }
@@ -5485,13 +5498,52 @@ function clearEmpSelections(){
   updateUniversalSelection('emp-row-select', 'empBulkToolbar', 'empSelectedCount', 'empSelectAll', 'empBulkEditBtn', 'employees');
 }
 
+let currentEmpFilter = 'all';
+
+function filterEmp(btn, type){
+  let targetBtn = null;
+  let targetType = 'all';
+  if(typeof btn === 'string'){
+    targetType = btn;
+    targetBtn = type;
+  } else if(btn && typeof btn === 'object'){
+    targetBtn = btn;
+    targetType = type || 'all';
+  } else if(typeof type === 'string'){
+    targetType = type;
+  }
+  currentEmpFilter = (targetType || 'all').toLowerCase();
+  const filterBar = document.getElementById('empFilterBar') || (targetBtn ? targetBtn.parentElement : null);
+  if(filterBar){
+    filterBar.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    if(targetBtn && targetBtn.classList) targetBtn.classList.add('active');
+  }
+  renderEmp();
+}
+
+function filterEmpByCard(filterKey){
+  currentEmpFilter = (filterKey || 'all').toLowerCase();
+  const filterBar = document.getElementById('empFilterBar');
+  if(filterBar){
+    filterBar.querySelectorAll('.chip').forEach(c => {
+      const onclickAttr = c.getAttribute('onclick') || '';
+      if(onclickAttr.includes("'" + filterKey + "'") || onclickAttr.includes('"' + filterKey + '"')){
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
+  renderEmp();
+}
+
 function renderEmp(){
   const validEmps = (employees || []).filter(e => e && typeof e === 'object' && Object.values(e).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
 
   const totalStaff = validEmps.length;
   const activeCount = validEmps.filter(e => {
     const st = String(e.status || e.STATUS || e.Status || e['STATUS'] || e['Status'] || e['Employee Status'] || 'Active').trim().toLowerCase();
-    return st === 'active' || st === 'permanent' || st === 'confirmed' || st === 'full-time';
+    return st === 'active' || st === 'permanent' || st === 'confirmed' || st === 'full-time' || st === '' || st === 'undefined';
   }).length;
 
   const leaveCount = validEmps.filter(e => {
@@ -5510,11 +5562,31 @@ function renderEmp(){
   if(document.getElementById('empAvgAtt')) document.getElementById('empAvgAtt').textContent = (totalStaff > 0 ? avgAtt + '%' : '0%');
   if(document.getElementById('empPayroll')) document.getElementById('empPayroll').textContent = INR(totalPayroll);
 
-  // Search filtering
-  const q = (document.getElementById('empSearchInput')?.value || '').trim().toLowerCase();
+  // 1. Status Filter Bar filtering
   let displayData = validEmps;
+  if(currentEmpFilter && currentEmpFilter !== 'all'){
+    displayData = displayData.filter(e => {
+      const st = String(e.status || e.STATUS || e.Status || e['STATUS'] || e['Status'] || e['Employee Status'] || '').trim().toLowerCase();
+      if(currentEmpFilter === 'active'){
+        return st === 'active' || st === 'permanent' || st === 'confirmed' || st === 'full-time' || st === '' || st === 'undefined';
+      }
+      if(currentEmpFilter === 'leave'){
+        return st.includes('leave') || st === 'on leave';
+      }
+      if(currentEmpFilter === 'pending'){
+        return st === 'pending' || st === 'probation';
+      }
+      if(currentEmpFilter === 'inactive'){
+        return st === 'inactive' || st === 'terminated';
+      }
+      return true;
+    });
+  }
+
+  // 2. Search query filtering
+  const q = (document.getElementById('empSearchInput')?.value || '').trim().toLowerCase();
   if(q){
-    displayData = validEmps.filter(e => {
+    displayData = displayData.filter(e => {
       return Object.values(e).some(v => v !== undefined && v !== null && String(v).toLowerCase().includes(q));
     });
   }
@@ -5612,16 +5684,79 @@ function clearCustSelection(){
   updateUniversalSelection('cust-row-select', 'custBulkToolbar', 'custSelectedCount', 'custSelectAll', 'custBulkEditBtn', 'customers');
 }
 
-function renderCust(){
-  const totalLtv = customers.reduce((sum, c) => sum + (Number(c.ltv || c.LTV || 0) || 0), 0);
-  const avgLtv = customers.length ? Math.round(totalLtv / customers.length) : 0;
-  const activeCount = customers.filter(c => (c.status || c.STATUS || 'Active').toLowerCase() === 'active').length;
+let currentCustFilter = 'all';
 
-  if(document.getElementById('custTotal')) document.getElementById('custTotal').textContent = customers.length;
-  if(document.getElementById('crmTotal')) document.getElementById('crmTotal').textContent = customers.length;
+function filterCust(btn, type){
+  let targetBtn = null;
+  let targetType = 'all';
+  if(typeof btn === 'string'){
+    targetType = btn;
+    targetBtn = type;
+  } else if(btn && typeof btn === 'object'){
+    targetBtn = btn;
+    targetType = type || 'all';
+  } else if(typeof type === 'string'){
+    targetType = type;
+  }
+  currentCustFilter = (targetType || 'all').toLowerCase();
+  const container = document.getElementById('page-crm') || document;
+  container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  if(targetBtn && targetBtn.classList) targetBtn.classList.add('active');
+  renderCust();
+}
+
+function filterCustByCard(type){
+  currentCustFilter = (type || 'all').toLowerCase();
+  const container = document.getElementById('page-crm') || document;
+  container.querySelectorAll('.chip').forEach(c => {
+    const onclickAttr = c.getAttribute('onclick') || '';
+    if(onclickAttr.includes("'" + type + "'") || onclickAttr.includes('"' + type + '"')){
+      c.classList.add('active');
+    } else {
+      c.classList.remove('active');
+    }
+  });
+  renderCust();
+}
+
+function renderCust(){
+  const validCusts = (customers || []).filter(c => c && typeof c === 'object' && Object.values(c).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
+
+  const totalLtv = validCusts.reduce((sum, c) => sum + parseCleanNumber(c.ltv || c.LTV || c['Lifetime Value'] || c.total_amount || c.total_purchase_value || 0), 0);
+  const avgLtv = validCusts.length ? Math.round(totalLtv / validCusts.length) : 0;
+  const activeCount = validCusts.filter(c => {
+    const st = String(c.status || c.STATUS || 'Active').trim().toLowerCase();
+    return st === 'active' || !st;
+  }).length;
+
+  const complaintCount = validCusts.filter(c => String(c.status || c.STATUS || c.tags || c.notes || '').toLowerCase().includes('complaint')).length;
+  const followupCount = validCusts.filter(c => String(c.status || c.STATUS || c.tags || c.notes || '').toLowerCase().includes('follow')).length;
+
+  if(document.getElementById('custTotal')) document.getElementById('custTotal').textContent = validCusts.length;
+  if(document.getElementById('crmTotal')) document.getElementById('crmTotal').textContent = validCusts.length;
+  if(document.getElementById('custComplaints')) document.getElementById('custComplaints').textContent = complaintCount;
+  if(document.getElementById('custFollowups')) document.getElementById('custFollowups').textContent = followupCount;
   if(document.getElementById('custAvgLtv')) document.getElementById('custAvgLtv').textContent = INR(avgLtv);
   if(document.getElementById('crmLtv')) document.getElementById('crmLtv').textContent = INR(totalLtv);
   if(document.getElementById('crmActive')) document.getElementById('crmActive').textContent = activeCount;
+
+  let displayData = validCusts;
+  if(currentCustFilter && currentCustFilter !== 'all'){
+    displayData = displayData.filter(c => {
+      const st = String(c.status || c.STATUS || '').toLowerCase();
+      const tags = String(c.tags || c.category || c.type || '').toLowerCase();
+      if(currentCustFilter === 'active') return st === 'active' || !st;
+      if(currentCustFilter === 'followup') return st.includes('follow') || tags.includes('follow');
+      if(currentCustFilter === 'complaint') return st.includes('complaint') || tags.includes('complaint');
+      if(currentCustFilter === 'vip') return tags.includes('vip') || (parseCleanNumber(c.ltv || c.LTV || 0) > 50000);
+      return true;
+    });
+  }
+
+  const searchVal = (document.getElementById('crmSearchInput')?.value || document.getElementById('custSearchInput')?.value || '').toLowerCase().trim();
+  if(searchVal){
+    displayData = displayData.filter(c => Object.values(c).some(val => val !== undefined && val !== null && String(val).toLowerCase().includes(searchVal)));
+  }
 
   renderDynamicTable({
     tableId: 'custBody',
@@ -5630,7 +5765,7 @@ function renderCust(){
     editBtnId: 'custBulkEditBtn',
     selectAllId: 'custSelectAll',
     rowCheckboxClass: 'cust-row-select',
-    data: customers,
+    data: displayData,
     defaultColumns: [
       { key: 'name', label: 'Customer Name' },
       { key: 'phone', label: 'Phone' },
@@ -5717,10 +5852,35 @@ function clearInvSelection(){
 
 let currentInvFilter = 'all';
 
-function filterInv(type, btn){
-  currentInvFilter = type;
+function filterInv(arg1, arg2){
+  let btn = null;
+  let type = 'all';
+  if(typeof arg1 === 'string'){
+    type = arg1;
+    btn = arg2;
+  } else if(arg1 && typeof arg1 === 'object'){
+    btn = arg1;
+    type = arg2 || 'all';
+  } else if(typeof arg2 === 'string'){
+    type = arg2;
+  }
+  currentInvFilter = (type || 'all').toLowerCase();
   document.querySelectorAll('#page-inventory .chip').forEach(c => c.classList.remove('active'));
-  if(btn) btn.classList.add('active');
+  if(btn && btn.classList) btn.classList.add('active');
+  renderInv();
+}
+
+function filterInvByCard(type){
+  currentInvFilter = (type || 'all').toLowerCase();
+  const container = document.getElementById('page-inventory') || document;
+  container.querySelectorAll('.chip').forEach(c => {
+    const onclickAttr = c.getAttribute('onclick') || '';
+    if(onclickAttr.includes("'" + type + "'") || onclickAttr.includes('"' + type + '"')){
+      c.classList.add('active');
+    } else {
+      c.classList.remove('active');
+    }
+  });
   renderInv();
 }
 
@@ -5912,20 +6072,71 @@ function clearSuppSelection(){
   updateUniversalSelection('supp-row-select', 'suppBulkToolbar', 'suppSelectedCount', 'suppSelectAll', 'suppBulkEditBtn', 'suppliers');
 }
 
-function renderSuppliers(){
-  const activeCount = suppliers.filter(s => (s.status || s.STATUS || 'Active').toLowerCase() === 'active').length;
-  const totalOrders = suppliers.reduce((acc, s) => acc + (Number(s.total_orders || s['TOTAL ORDERS'] || s['Total Orders'] || s.orders || 0) || 0), 0);
-  const totalPayables = suppliers.reduce((acc, s) => acc + (Number(s.total_purchase_value || s['TOTAL PURCHASE VALUE'] || s['Total Purchase Value'] || s.payables || s.balance || 0) || 0), 0);
+let currentSupplierFilter = 'all';
 
-  if(document.getElementById('supplierCount')) document.getElementById('supplierCount').textContent = suppliers.length;
+function filterSuppliers(btn, type){
+  let targetBtn = null;
+  let targetType = 'all';
+  if(typeof btn === 'string'){
+    targetType = btn;
+    targetBtn = type;
+  } else if(btn && typeof btn === 'object'){
+    targetBtn = btn;
+    targetType = type || 'all';
+  } else if(typeof type === 'string'){
+    targetType = type;
+  }
+  currentSupplierFilter = (targetType || 'all').toLowerCase();
+  const filterBar = document.getElementById('supplierFilterBar') || (targetBtn ? targetBtn.parentElement : null);
+  if(filterBar){
+    filterBar.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    if(targetBtn && targetBtn.classList) targetBtn.classList.add('active');
+  }
+  renderSuppliers();
+}
+
+function filterSuppliersByCard(type){
+  currentSupplierFilter = (type || 'all').toLowerCase();
+  const filterBar = document.getElementById('supplierFilterBar');
+  if(filterBar){
+    filterBar.querySelectorAll('.chip').forEach(c => {
+      const onclickAttr = c.getAttribute('onclick') || '';
+      if(onclickAttr.includes("'" + type + "'") || onclickAttr.includes('"' + type + '"')){
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
+  renderSuppliers();
+}
+
+function renderSuppliers(){
+  const validSupps = (suppliers || []).filter(s => s && typeof s === 'object' && Object.values(s).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
+
+  const activeCount = validSupps.filter(s => (s.status || s.STATUS || 'Active').toLowerCase() === 'active').length;
+  const totalOrders = validSupps.reduce((acc, s) => acc + parseCleanNumber(s.total_orders || s['TOTAL ORDERS'] || s['Total Orders'] || s.orders || 0), 0);
+  const totalPayables = validSupps.reduce((acc, s) => acc + parseCleanNumber(s.total_purchase_value || s['TOTAL PURCHASE VALUE'] || s['Total Purchase Value'] || s.payables || s.balance || s.total_amount || 0), 0);
+
+  if(document.getElementById('supplierCount')) document.getElementById('supplierCount').textContent = validSupps.length;
   if(document.getElementById('supplierActive')) document.getElementById('supplierActive').textContent = activeCount;
   if(document.getElementById('supplierPOs')) document.getElementById('supplierPOs').textContent = String(totalOrders || '0');
   if(document.getElementById('supplierPayables')) document.getElementById('supplierPayables').textContent = INR(totalPayables);
 
+  let filteredSuppliers = validSupps;
+  if(currentSupplierFilter && currentSupplierFilter !== 'all'){
+    filteredSuppliers = filteredSuppliers.filter(s => {
+      const st = String(s.status || s.STATUS || '').trim().toLowerCase();
+      if(currentSupplierFilter === 'active') return st === 'active' || !st;
+      if(currentSupplierFilter === 'pending') return st === 'pending';
+      if(currentSupplierFilter === 'inactive') return st === 'inactive' || st === 'blocked';
+      return true;
+    });
+  }
+
   const searchVal = (document.getElementById('supplierSearch')?.value || '').toLowerCase().trim();
-  let filteredSuppliers = suppliers;
   if(searchVal){
-    filteredSuppliers = suppliers.filter(s => Object.values(s).some(val => val !== undefined && val !== null && String(val).toLowerCase().includes(searchVal)));
+    filteredSuppliers = filteredSuppliers.filter(s => Object.values(s).some(val => val !== undefined && val !== null && String(val).toLowerCase().includes(searchVal)));
   }
 
   renderDynamicTable({
@@ -6270,16 +6481,52 @@ function confirmOcr(){
   showToast('Expense of ' + INR(amount) + ' recorded for ' + vendor + '!');
 }
 
+let currentInvoiceFilter = 'all';
+
+function filterInv2(btn, type){
+  let targetBtn = null;
+  let targetType = 'all';
+  if(typeof btn === 'string'){
+    targetType = btn;
+    targetBtn = type;
+  } else if(btn && typeof btn === 'object'){
+    targetBtn = btn;
+    targetType = type || 'all';
+  } else if(typeof type === 'string'){
+    targetType = type;
+  }
+  currentInvoiceFilter = (targetType || 'all').toLowerCase();
+  const filterParent = targetBtn ? targetBtn.parentElement : document.querySelector('#page-finance .filter-bar');
+  if(filterParent){
+    filterParent.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    if(targetBtn && targetBtn.classList) targetBtn.classList.add('active');
+  }
+  renderInvoices();
+}
+
 function renderInvoices(){
   const tbody = document.getElementById('invBody2') || document.getElementById('invoicesBody');
   if(!tbody) return;
 
-  if(!invoices || !invoices.length){
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-faint);">No invoices generated yet. Click <b>+ Create Smart Invoice</b> to issue an invoice.</td></tr>';
+  const validInvoices = invoices || [];
+  let filteredInvoices = validInvoices;
+  if(currentInvoiceFilter && currentInvoiceFilter !== 'all'){
+    const today = todayStr();
+    filteredInvoices = filteredInvoices.filter(i => {
+      const st = String(i.status || 'Pending').trim().toLowerCase();
+      if(currentInvoiceFilter === 'paid') return st === 'paid';
+      if(currentInvoiceFilter === 'pending') return st === 'pending' || st === 'unpaid';
+      if(currentInvoiceFilter === 'overdue') return st === 'overdue' || (st === 'pending' && i.due_date && i.due_date < today);
+      return true;
+    });
+  }
+
+  if(!filteredInvoices || !filteredInvoices.length){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-faint);">No ' + (currentInvoiceFilter !== 'all' ? currentInvoiceFilter + ' ' : '') + 'invoices found. Click <b>+ Create Smart Invoice</b> to issue an invoice.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = invoices.map(i =>
+  tbody.innerHTML = filteredInvoices.map(i =>
     '<tr>' +
       '<td><b>' + escapeHtml(i.invoice_no || 'INV') + '</b></td>' +
       '<td>' + escapeHtml(i.customer_name || 'Customer') + '</td>' +
@@ -7439,13 +7686,22 @@ function renderDashChart(range){
     window._chartDashRevExp.destroy();
   }
 
+  // Sync active class on timeframe buttons
+  const filterBtns = document.querySelectorAll('#dashChartFilters button');
+  if(filterBtns && filterBtns.length){
+    filterBtns.forEach(b => {
+      if(b.textContent.trim() === range) b.classList.add('active');
+      else b.classList.remove('active');
+    });
+  }
+
   window._chartDashRevExp = new Chart(canvas, {
     type: 'line',
     data: {
       labels: labels,
       datasets: [
         {
-          label: 'Revenue (&#8377;)',
+          label: 'Revenue',
           data: revData,
           borderColor: '#1D9E74',
           backgroundColor: 'rgba(29, 158, 116, 0.12)',
@@ -7457,7 +7713,7 @@ function renderDashChart(range){
           tension: 0.35
         },
         {
-          label: 'Expenses (&#8377;)',
+          label: 'Expenses',
           data: expData,
           borderColor: '#E24B4A',
           backgroundColor: 'rgba(226, 75, 74, 0.10)',
@@ -7496,9 +7752,10 @@ function renderDashChart(range){
           grid: { color: 'rgba(0,0,0,0.05)' },
           ticks: {
             callback: function(val) {
-              if(val >= 100000) return '&#8377;' + (val/100000).toFixed(1) + 'L';
-              if(val >= 1000) return '&#8377;' + (val/1000).toFixed(0) + 'k';
-              return '&#8377;' + val;
+              if(val >= 10000000) return '₹' + (val/10000000).toFixed(1) + 'Cr';
+              if(val >= 100000) return '₹' + (val/100000).toFixed(1) + 'L';
+              if(val >= 1000) return '₹' + (val/1000).toFixed(0) + 'k';
+              return '₹' + val;
             },
             font: { size: 11 }
           }
@@ -8406,8 +8663,9 @@ function renderFinanceCharts(){
       displayMonths.push(months[mIdx]);
     }
 
-    const totalRev = (invoices || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
-    const totalExp = (expenses || []).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const mMetrics = getAggregatedBusinessMetrics();
+    const totalRev = mMetrics.totalRev;
+    const totalExp = mMetrics.totalExp;
 
     const revWeights = [0.12, 0.14, 0.16, 0.18, 0.19, 0.21];
     const expWeights = [0.15, 0.16, 0.14, 0.17, 0.18, 0.20];
@@ -8421,13 +8679,13 @@ function renderFinanceCharts(){
         labels: displayMonths,
         datasets: [
           {
-            label: 'Revenue (&#8377;)',
+            label: 'Revenue',
             data: revData,
             backgroundColor: '#1D9E74',
             borderRadius: 6
           },
           {
-            label: 'Expenses (&#8377;)',
+            label: 'Expenses',
             data: expData,
             backgroundColor: '#E24B4A',
             borderRadius: 6
@@ -8441,7 +8699,7 @@ function renderFinanceCharts(){
           legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } },
           tooltip: {
             callbacks: {
-              label: function(ctx){ return ctx.dataset.label + ': ' + INR(ctx.raw); }
+              label: function(ctx){ return ' ' + ctx.dataset.label + ': ' + INR(ctx.raw); }
             }
           }
         },
@@ -8449,7 +8707,12 @@ function renderFinanceCharts(){
           y: {
             beginAtZero: true,
             ticks: {
-              callback: function(v){ return '&#8377;' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v)); }
+              callback: function(v){
+                if(v >= 10000000) return '₹' + (v/10000000).toFixed(1) + 'Cr';
+                if(v >= 100000) return '₹' + (v/100000).toFixed(1) + 'L';
+                if(v >= 1000) return '₹' + (v/1000).toFixed(0) + 'k';
+                return '₹' + v;
+              }
             }
           }
         }
@@ -8530,7 +8793,7 @@ function renderReports(){
       data: {
         labels: labels,
         datasets: [{
-          label: 'Customer Lifetime Value (&#8377;)',
+          label: 'Customer Lifetime Value',
           data: dataVals,
           backgroundColor: '#1D9E74',
           borderRadius: 6
@@ -8551,7 +8814,12 @@ function renderReports(){
           y: {
             beginAtZero: true,
             ticks: {
-              callback: function(v){ return '&#8377;' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v)); }
+              callback: function(v){
+                if(v >= 10000000) return '₹' + (v/10000000).toFixed(1) + 'Cr';
+                if(v >= 100000) return '₹' + (v/100000).toFixed(1) + 'L';
+                if(v >= 1000) return '₹' + (v/1000).toFixed(0) + 'k';
+                return '₹' + v;
+              }
             }
           }
         }
@@ -9320,17 +9588,7 @@ function completeOnboarding(){
   showToast('Welcome to Kendra Enterprise OS!');
 }
 
-let currentCustFilter = 'all';
-function filterCust(btn, type){
-  currentCustFilter = type;
-  document.querySelectorAll('#page-crm .chip').forEach(c => c.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  renderCust();
-}
-
-function filterInv2(btn, type){
-  filterInv(type, btn);
-}
+// Filter helpers standardized above
 
 function applyBulkEditEmp(){
   closeModal('empBulkModal');
