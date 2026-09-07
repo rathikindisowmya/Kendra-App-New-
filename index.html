@@ -4243,6 +4243,52 @@ function isStatusKey(colKey){
          ['status', 'stockstatus', 'paymentstatus', 'orderstatus', 'categorystatus'].includes(joined);
 }
 
+function getEntityStatus(rec){
+  if(!rec || typeof rec !== 'object') return '';
+  // 1. Direct standard keys
+  if(rec.status !== undefined && rec.status !== null && String(rec.status).trim() !== '') return String(rec.status).trim();
+  if(rec.Status !== undefined && rec.Status !== null && String(rec.Status).trim() !== '') return String(rec.Status).trim();
+  if(rec.STATUS !== undefined && rec.STATUS !== null && String(rec.STATUS).trim() !== '') return String(rec.STATUS).trim();
+  
+  // 2. Case-insensitive & token matching
+  for(const k of Object.keys(rec)){
+    if(k === 'id' || k === '_rowId' || k === 'original_id' || k === '_displayId') continue;
+    const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if(cleanK === 'status' || cleanK === 'employeestatus' || cleanK === 'supplierstatus' || cleanK === 'customerstatus' || cleanK === 'stockstatus' || cleanK === 'accountstatus' || cleanK === 'paymentstatus' || cleanK === 'orderstatus' || cleanK === 'employmentstatus' || cleanK === 'state' || cleanK === 'stage' || cleanK === 'condition'){
+      const val = rec[k];
+      if(val !== undefined && val !== null && String(val).trim() !== ''){
+        return String(val).trim();
+      }
+    }
+  }
+  return '';
+}
+
+function isStatusActive(val){
+  if(!val || val === '-' || val === 'N/A' || val === 'null' || val === 'undefined') return false;
+  const s = String(val).trim().toLowerCase();
+  return s === 'active' || s === 'permanent' || s === 'confirmed' || s === 'full-time' || s === 'verified' || s === 'in stock' || s === 'completed' || s === 'paid' || s === 'healthy';
+}
+
+function isStatusLeave(val){
+  if(!val) return false;
+  const s = String(val).trim().toLowerCase();
+  return s.includes('leave') || s === 'on leave' || s === 'vacation' || s === 'sick leave' || s === 'maternity leave';
+}
+
+function isStatusPending(val){
+  if(!val) return false;
+  const s = String(val).trim().toLowerCase();
+  return s.includes('pending') || s.includes('probation') || s.includes('draft') || s.includes('review') || s.includes('lead') || s.includes('unpaid') || s.includes('due') || s.includes('hold');
+}
+
+function isStatusInactive(val){
+  if(!val) return false;
+  const s = String(val).trim().toLowerCase();
+  return s.includes('inactive') || s.includes('terminated') || s.includes('resigned') || s.includes('blocked') || s.includes('blacklisted') || s.includes('expired') || s.includes('rejected') || s.includes('cancelled');
+}
+
+
 function isDateKey(colKey){
   if(!colKey) return false;
   const tokens = getFieldTokens(colKey);
@@ -4880,8 +4926,8 @@ function getRowValueByColumnKey(item, colKey){
   if (lowerCol.includes('city') || lowerCol.includes('location')) {
     return item.city || item.location || item['CITY'] || item['LOCATION'] || '';
   }
-  if (lowerCol.includes('status')) {
-    return item.status || item['STATUS'] || 'Active';
+  if (lowerCol.includes('status') || lowerCol === 'state' || lowerCol === 'stage') {
+    return getEntityStatus(item) || '-';
   }
 
   return '-';
@@ -5363,8 +5409,8 @@ function syncEntityAliases(rec){
   const nameVal = rec.name || rec['NAME'] || rec['EMPLOYEE NAME'] || rec['Employee Name'] || rec['CUSTOMER NAME'] || rec['Customer Name'] || rec['SUPPLIER NAME'] || rec['Supplier Name'] || rec['PRODUCT NAME'] || rec['Product Name'] || rec['Product Title'] || rec['Client Name'] || rec['Vendor Name'] || rec['ITEM NAME'] || rec['ITEM'];
   if(nameVal) rec.name = String(nameVal).trim();
 
-  // Status aliases
-  const statusVal = rec.status || rec['STATUS'] || rec['Status'] || rec['EMPLOYEE STATUS'] || rec['Employee Status'] || rec['STOCK STATUS'] || rec['Stock Status'] || rec['Payment Status'];
+  // Status aliases -> dynamically find and sync
+  const statusVal = getEntityStatus(rec);
   if(statusVal) rec.status = String(statusVal).trim();
 
   // Join Date / Date of Joining aliases
@@ -5540,16 +5586,13 @@ function filterEmpByCard(filterKey){
 function renderEmp(){
   const validEmps = (employees || []).filter(e => e && typeof e === 'object' && Object.values(e).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
 
-  const totalStaff = validEmps.length;
-  const activeCount = validEmps.filter(e => {
-    const st = String(e.status || e.STATUS || e.Status || e['STATUS'] || e['Status'] || e['Employee Status'] || 'Active').trim().toLowerCase();
-    return st === 'active' || st === 'permanent' || st === 'confirmed' || st === 'full-time' || st === '' || st === 'undefined';
-  }).length;
+  validEmps.forEach(e => syncEntityAliases(e));
 
-  const leaveCount = validEmps.filter(e => {
-    const st = String(e.status || e.STATUS || e.Status || e['STATUS'] || e['Status'] || e['Employee Status'] || '').trim().toLowerCase();
-    return st.includes('leave') || st === 'on leave';
-  }).length;
+  const totalStaff = validEmps.length;
+  const activeCount = validEmps.filter(e => isStatusActive(getEntityStatus(e))).length;
+  const leaveCount = validEmps.filter(e => isStatusLeave(getEntityStatus(e))).length;
+  const pendingCount = validEmps.filter(e => isStatusPending(getEntityStatus(e))).length;
+  const inactiveCount = validEmps.filter(e => isStatusInactive(getEntityStatus(e))).length;
 
   const avgAtt = totalStaff ? Math.round(validEmps.reduce((s, e) => s + parseCleanNumber(e.attendance_pct || e.Attendance || e['ATTENDANCE'] || e['Attendance Pct'] || 95), 0) / totalStaff) : 0;
   const totalPayroll = validEmps.reduce((s, e) => s + parseCleanNumber(e.salary || e.Salary || e['Monthly Salary'] || e['MONTHLY SALARY'] || 0), 0);
@@ -5566,19 +5609,11 @@ function renderEmp(){
   let displayData = validEmps;
   if(currentEmpFilter && currentEmpFilter !== 'all'){
     displayData = displayData.filter(e => {
-      const st = String(e.status || e.STATUS || e.Status || e['STATUS'] || e['Status'] || e['Employee Status'] || '').trim().toLowerCase();
-      if(currentEmpFilter === 'active'){
-        return st === 'active' || st === 'permanent' || st === 'confirmed' || st === 'full-time' || st === '' || st === 'undefined';
-      }
-      if(currentEmpFilter === 'leave'){
-        return st.includes('leave') || st === 'on leave';
-      }
-      if(currentEmpFilter === 'pending'){
-        return st === 'pending' || st === 'probation';
-      }
-      if(currentEmpFilter === 'inactive'){
-        return st === 'inactive' || st === 'terminated';
-      }
+      const st = getEntityStatus(e);
+      if(currentEmpFilter === 'active') return isStatusActive(st);
+      if(currentEmpFilter === 'leave') return isStatusLeave(st);
+      if(currentEmpFilter === 'pending') return isStatusPending(st);
+      if(currentEmpFilter === 'inactive') return isStatusInactive(st);
       return true;
     });
   }
@@ -5722,15 +5757,14 @@ function filterCustByCard(type){
 function renderCust(){
   const validCusts = (customers || []).filter(c => c && typeof c === 'object' && Object.values(c).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
 
+  validCusts.forEach(c => syncEntityAliases(c));
+
   const totalLtv = validCusts.reduce((sum, c) => sum + parseCleanNumber(c.ltv || c.LTV || c['Lifetime Value'] || c.total_amount || c.total_purchase_value || 0), 0);
   const avgLtv = validCusts.length ? Math.round(totalLtv / validCusts.length) : 0;
-  const activeCount = validCusts.filter(c => {
-    const st = String(c.status || c.STATUS || 'Active').trim().toLowerCase();
-    return st === 'active' || !st;
-  }).length;
+  const activeCount = validCusts.filter(c => isStatusActive(getEntityStatus(c))).length;
 
-  const complaintCount = validCusts.filter(c => String(c.status || c.STATUS || c.tags || c.notes || '').toLowerCase().includes('complaint')).length;
-  const followupCount = validCusts.filter(c => String(c.status || c.STATUS || c.tags || c.notes || '').toLowerCase().includes('follow')).length;
+  const complaintCount = validCusts.filter(c => String(getEntityStatus(c) + ' ' + (c.tags||'') + ' ' + (c.notes||'')).toLowerCase().includes('complaint')).length;
+  const followupCount = validCusts.filter(c => String(getEntityStatus(c) + ' ' + (c.tags||'') + ' ' + (c.notes||'')).toLowerCase().includes('follow')).length;
 
   if(document.getElementById('custTotal')) document.getElementById('custTotal').textContent = validCusts.length;
   if(document.getElementById('crmTotal')) document.getElementById('crmTotal').textContent = validCusts.length;
@@ -5743,11 +5777,11 @@ function renderCust(){
   let displayData = validCusts;
   if(currentCustFilter && currentCustFilter !== 'all'){
     displayData = displayData.filter(c => {
-      const st = String(c.status || c.STATUS || '').toLowerCase();
+      const st = getEntityStatus(c);
       const tags = String(c.tags || c.category || c.type || '').toLowerCase();
-      if(currentCustFilter === 'active') return st === 'active' || !st;
-      if(currentCustFilter === 'followup') return st.includes('follow') || tags.includes('follow');
-      if(currentCustFilter === 'complaint') return st.includes('complaint') || tags.includes('complaint');
+      if(currentCustFilter === 'active') return isStatusActive(st);
+      if(currentCustFilter === 'followup') return st.toLowerCase().includes('follow') || tags.includes('follow');
+      if(currentCustFilter === 'complaint') return st.toLowerCase().includes('complaint') || tags.includes('complaint');
       if(currentCustFilter === 'vip') return tags.includes('vip') || (parseCleanNumber(c.ltv || c.LTV || 0) > 50000);
       return true;
     });
@@ -6114,7 +6148,9 @@ function filterSuppliersByCard(type){
 function renderSuppliers(){
   const validSupps = (suppliers || []).filter(s => s && typeof s === 'object' && Object.values(s).some(v => v !== undefined && v !== null && String(v).trim() !== '' && v !== 'id' && v !== '_rowId'));
 
-  const activeCount = validSupps.filter(s => (s.status || s.STATUS || 'Active').toLowerCase() === 'active').length;
+  validSupps.forEach(s => syncEntityAliases(s));
+
+  const activeCount = validSupps.filter(s => isStatusActive(getEntityStatus(s))).length;
   const totalOrders = validSupps.reduce((acc, s) => acc + parseCleanNumber(s.total_orders || s['TOTAL ORDERS'] || s['Total Orders'] || s.orders || 0), 0);
   const totalPayables = validSupps.reduce((acc, s) => acc + parseCleanNumber(s.total_purchase_value || s['TOTAL PURCHASE VALUE'] || s['Total Purchase Value'] || s.payables || s.balance || s.total_amount || 0), 0);
 
@@ -6126,10 +6162,10 @@ function renderSuppliers(){
   let filteredSuppliers = validSupps;
   if(currentSupplierFilter && currentSupplierFilter !== 'all'){
     filteredSuppliers = filteredSuppliers.filter(s => {
-      const st = String(s.status || s.STATUS || '').trim().toLowerCase();
-      if(currentSupplierFilter === 'active') return st === 'active' || !st;
-      if(currentSupplierFilter === 'pending') return st === 'pending';
-      if(currentSupplierFilter === 'inactive') return st === 'inactive' || st === 'blocked';
+      const st = getEntityStatus(s);
+      if(currentSupplierFilter === 'active') return isStatusActive(st);
+      if(currentSupplierFilter === 'pending') return isStatusPending(st);
+      if(currentSupplierFilter === 'inactive') return isStatusInactive(st);
       return true;
     });
   }
@@ -6952,12 +6988,12 @@ function askCopilot(customQuery){
   });
 
   var totalCust     = (customers||[]).length;
-  var activeCust    = (customers||[]).filter(function(c){return (c.status||'Active').toLowerCase()==='active';}).length;
+  var activeCust    = (customers||[]).filter(function(c){return isStatusActive(getEntityStatus(c));}).length;
   var totalLtv      = (customers||[]).reduce(function(s,c){return s+(Number(c.ltv||c.LTV||0));},0);
   var avgLtv        = totalCust > 0 ? Math.round(totalLtv / totalCust) : 0;
 
   var totalEmp      = (employees||[]).length;
-  var activeEmp     = (employees||[]).filter(function(e){return (e.status||'Active').toLowerCase()==='active';}).length;
+  var activeEmp     = (employees||[]).filter(function(e){return isStatusActive(getEntityStatus(e));}).length;
   var onLeaveEmp    = (employees||[]).filter(function(e){return (e.status||'').toLowerCase().indexOf('leave') > -1;});
   var totalPayroll  = (employees||[]).reduce(function(s,e){return s+(Number(e.salary||e['Monthly Salary']||0));},0);
   var avgSalary     = totalEmp > 0 ? Math.round(totalPayroll / totalEmp) : 0;
@@ -7186,8 +7222,9 @@ function askCopilot(customQuery){
   }
   else if(!reply && matchedCustomer){
     var c = matchedCustomer;
+    var cStatus = getEntityStatus(c);
     reply = '&#129309; <b>Customer Account: ' + escapeHtml(c.name||c.customer_name) + '</b><br><br>' +
-      '&bull; <b>Account Status:</b> ' + ((c.status||'Active').toLowerCase()==='active' ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-amber">' + escapeHtml(c.status) + '</span>') + '<br>' +
+      '&bull; <b>Account Status:</b> ' + (isStatusActive(cStatus) ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-amber">' + escapeHtml(cStatus || 'Pending') + '</span>') + '<br>' +
       '&bull; <b>Lifetime Value (LTV):</b> <b>' + INR(Number(c.ltv||c.LTV||0)) + '</b><br>' +
       '&bull; <b>Contact:</b> ' + escapeHtml(c.phone||c.contact||'N/A') + ' &nbsp;|&nbsp; ' + escapeHtml(c.email||'N/A') + '<br>' +
       '&bull; <b>Location:</b> ' + escapeHtml(c.city||c.location||'India') + '<br>' +
@@ -7196,7 +7233,7 @@ function askCopilot(customQuery){
   }
   else if(!reply && matchedEmployee){
     var e = matchedEmployee;
-    var isActive = (e.status||'Active').toLowerCase()==='active';
+    var isActive = isStatusActive(getEntityStatus(e));
     reply = '&#128100; <b>Team Member: ' + escapeHtml(e.name||e.Name) + '</b><br><br>' +
       '&bull; <b>Department:</b> ' + escapeHtml(e.department||e.Department||'General') + '<br>' +
       '&bull; <b>Designation / Role:</b> ' + escapeHtml(e.role||e.designation||e.Role||'Staff') + '<br>' +
@@ -7232,7 +7269,7 @@ function askCopilot(customQuery){
     var deptSalary = deptEmps.reduce(function(s,e){return s+(Number(e.salary||e.Salary||0));},0);
     reply = '&#128101; <b>' + escapeHtml(matchedDept) + ' Department Roster</b><br><br>' +
       '&bull; <b>Staff Count:</b> ' + deptEmps.length + ' employee(s)<br>' +
-      '&bull; <b>Active on Duty:</b> ' + deptEmps.filter(function(e){return (e.status||'Active').toLowerCase()==='active';}).length + '<br>' +
+      '&bull; <b>Active on Duty:</b> ' + deptEmps.filter(function(e){return isStatusActive(getEntityStatus(e));}).length + '<br>' +
       '&bull; <b>Department Payroll:</b> ' + INR(deptSalary) + '<br><br>' +
       '<b>Members:</b><br>' +
       deptEmps.map(function(e){
@@ -7262,12 +7299,12 @@ function askCopilot(customQuery){
         return (Number(b.ltv||b.LTV||0)) - (Number(a.ltv||a.LTV||0));
       });
       if(sortedCust.length > 0){
-        var topC = sortedCust[0];
-        reply = '&#128142; <b>Top Client by Lifetime Value:</b><br><br>' +
+          var topCStatus = getEntityStatus(topC);
+          reply = '&#128142; <b>Top Client by Lifetime Value:</b><br><br>' +
           '&bull; <b>' + escapeHtml(topC.name||topC.customer_name) + '</b><br>' +
           '&bull; Total LTV: <b>' + INR(Number(topC.ltv||topC.LTV||0)) + '</b><br>' +
           '&bull; Location: ' + escapeHtml(topC.city||topC.location||'India') + '<br>' +
-          '&bull; Account Status: <span class="badge badge-green">' + escapeHtml(topC.status||'Active') + '</span>';
+          '&bull; Account Status: ' + (isStatusActive(topCStatus) ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-amber">' + escapeHtml(topCStatus || 'Pending') + '</span>');
       }
     }
     // "Most expensive product" / "Highest price item"
@@ -7467,8 +7504,9 @@ function askCopilot(customQuery){
 
       case 'employees':
         var empRoster = (employees||[]).slice(0, 6).map(function(e){
-          var isAct = (e.status||'Active').toLowerCase()==='active';
-          return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(e.name||e.Name) + '</b> (' + escapeHtml(e.department||e.Department||'General') + ') &mdash; ' + (isAct ? '<span style="color:var(--teal);">Active</span>' : '<span style="color:var(--coral);">' + escapeHtml(e.status) + '</span>');
+          var st = getEntityStatus(e);
+          var isAct = isStatusActive(st);
+          return '&nbsp;&nbsp;&bull; <b>' + escapeHtml(e.name||e.Name) + '</b> (' + escapeHtml(e.department||e.Department||'General') + ') &mdash; ' + (isAct ? '<span style="color:var(--teal);">Active</span>' : '<span style="color:var(--coral);">' + escapeHtml(st || 'Pending') + '</span>');
         }).join('<br>');
 
         reply = '&#128101; <b>Workforce &amp; Human Resources Overview:</b><br><br>' +
@@ -7861,12 +7899,12 @@ function getAggregatedBusinessMetrics(){
   const totalCust = (customers || []).length;
   const totalLtv = custRev;
   const avgLtv = totalCust > 0 ? Math.round(totalLtv / totalCust) : 0;
-  const activeClients = (customers || []).filter(c => (c.status || c.STATUS || 'Active').toLowerCase() === 'active').length;
+  const activeClients = (customers || []).filter(c => isStatusActive(getEntityStatus(c))).length;
   const retentionRate = totalCust > 0 ? Math.round((activeClients / totalCust) * 100) : (totalCust === 0 ? 100 : 0);
 
   // 7. WORKFORCE & HR
   const totalEmp = (employees || []).length;
-  const activeEmp = (employees || []).filter(e => (e.status || 'Active').toLowerCase() === 'active').length;
+  const activeEmp = (employees || []).filter(e => isStatusActive(getEntityStatus(e))).length;
   const avgAtt = employees.length ? Math.round(employees.reduce((s, e) => {
     return s + parseCleanNumber(e.attendance_pct || e.Attendance || e['ATTENDANCE'] || 95);
   }, 0) / employees.length) : (totalEmp > 0 ? 95 : 0);
